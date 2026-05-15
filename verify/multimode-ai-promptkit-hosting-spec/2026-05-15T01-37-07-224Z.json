@@ -1,0 +1,286 @@
+{
+  "specFile": "/Users/hfox/Developments/multimode-ai/specs/multimode-ai-promptkit-hosting-spec.md",
+  "timestamp": "2026-05-15T01:37:07.224Z",
+  "model": "claude-sonnet-4-6",
+  "criteria": [
+    {
+      "criterion": "A dynamic route file exists at `app/promptkit/[slug]/page.tsx` and renders markdown content from `content/promptkits/[slug].md` ONLY when a valid signed token is present in the request",
+      "status": "met",
+      "evidence": "File confirmed at `app/promptkit/[slug]/page.tsx`. It reads `content/promptkits/${params.slug}.md` using `fs.readFile`. Token validation is handled upstream by `middleware.ts` which intercepts all `/promptkit/*` requests before the page renders.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "The page exports `metadata` with `robots: { index: false, follow: false }` set",
+      "status": "met",
+      "evidence": "`app/promptkit/[slug]/page.tsx` line 11: `robots: { index: false, follow: false }` is set inside the exported `Metadata` object.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "The route uses `generateStaticParams` returning an empty array — pages are NOT statically generated, they render on demand with token validation",
+      "status": "met",
+      "evidence": "`app/promptkit/[slug]/page.tsx` lines 14-16: `export async function generateStaticParams() { return []; }`. Additionally `export const dynamic = \"force-dynamic\"` at line 8 ensures per-request rendering.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "A reusable layout component exists at `components/PromptKitLayout.tsx` and is used by the dynamic route",
+      "status": "met",
+      "evidence": "`components/PromptKitLayout.tsx` exists and is imported and rendered in `app/promptkit/[slug]/page.tsx` (`import PromptKitLayout from \"@/components/PromptKitLayout\"` and `return <PromptKitLayout title={title} content={body} />`). ",
+      "confidence": "high"
+    },
+    {
+      "criterion": "The layout component renders ONLY two sidebar sections: a consulting CTA linking to `multimodeai.com/#contact` and a newsletter CTA linking to `https://multimodeai.substack.com`. There is NO 'Other prompt kits' navigation",
+      "status": "met",
+      "evidence": "`components/PromptKitLayout.tsx` sidebar (`<aside>`) contains exactly two `<section>` elements: one CTA linking to `https://multimodeai.com/#contact` and one linking to `https://multimodeai.substack.com`. No cross-promptkit navigation, catalog, or file-system enumeration found. Grep for 'Other prompt kits', 'promptkitsnav', 'readdirSync.*promptkit' returned no matches.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "Prompt-kit markdown files use UUID-style slugs as filenames. Two files exist in `content/promptkits/`: one for the six-layer audit kit, one for the brand-in-agent-memory kit",
+      "status": "met",
+      "evidence": "`content/promptkits/` contains exactly `a8f3b2c1-7d4e-4f9a-b1c2-9d3e8f7a6b5c.md` (six-layer audit kit, confirmed by frontmatter `source: six-layer-audit-newsletter.md`) and `c4e9d7a2-3f8b-4c1a-9e5d-7f2b8a4c6d1e.md` (brand-in-agent-memory kit). Both filenames match UUID v4 pattern.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "`public/robots.txt` includes a `Disallow: /promptkit/` directive",
+      "status": "met",
+      "evidence": "`public/robots.txt` line 3: `Disallow: /promptkit/`",
+      "confidence": "high"
+    },
+    {
+      "criterion": "`public/sitemap.xml` does NOT include any URL matching `/promptkit/*`",
+      "status": "met",
+      "evidence": "`public/sitemap.xml` contains only one `<url>` entry: `https://multimodeai.com`. No `/promptkit/` string found in the file.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "`npm run build` completes successfully without TypeScript errors or warnings",
+      "status": "unverifiable",
+      "evidence": "Build cannot be executed in this static analysis environment. The code appears structurally sound: types are consistent, imports are valid, `gray-matter`, `jose`, `react-markdown`, and `remark-gfm` are all present in `package.json`. No obvious type errors observed. However, runtime build verification is required.",
+      "confidence": "low"
+    },
+    {
+      "criterion": "No internal page on multimodeai.com (specifically `app/page.tsx` and all files in `components/`) contains a link to any `/promptkit/*` URL or to any prompt-kit slug",
+      "status": "met",
+      "evidence": "Search for `/promptkit/` in `app/` and `components/` returned no matches. Search for UUID slugs `a8f3b2c1` and `c4e9d7a2` in `app/` and `components/` returned no matches. `app/page.tsx` only imports Hero, Services, HowItWorks, WhyUs, Contact, Footer — none link to promptkit URLs.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "Markdown rendering correctly handles frontmatter (strips or parses), code blocks, blockquotes, tables, and inline formatting",
+      "status": "met",
+      "evidence": "`app/promptkit/[slug]/page.tsx` uses `gray-matter` to parse frontmatter (`matter(raw).content`) with a fallback `stripFrontmatter()`. `components/PromptKitLayout.tsx` uses `react-markdown` with `remark-gfm` plugin and explicitly handles: `code`, `pre` (code blocks), `blockquote`, `table`/`th`/`td`, `strong`, `em`, `ul`, `ol`, `li`, `a`, `p`, `h1`/`h2`/`h3` (inline formatting).",
+      "confidence": "high"
+    },
+    {
+      "criterion": "The Tailwind utility classes used in PromptKitLayout match the visual register of existing components (Hero, Services, HowItWorks, WhyUs, Contact, Footer)",
+      "status": "met",
+      "evidence": "`components/PromptKitLayout.tsx` uses `px-6 md:px-12 lg:px-24 py-16`, `max-w-6xl mx-auto`, `text-warm-gray`, `text-charcoal`, `bg-charcoal text-cream`, `border-sage`, `bg-beige`, `font-semibold tracking-tight` — all identical to classes used in Hero, Services, HowItWorks, WhyUs, and Contact. Custom colors (`cream`, `beige`, `charcoal`, `warm-gray`, `sage`, `sage-dark`) are all defined in `tailwind.config.ts`.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "Token validation middleware exists at `middleware.ts`. Intercepts all `/promptkit/*` requests, validates `?t=` JWT against `PROMPTKIT_TOKEN_SECRET`, and returns a generic 404 for missing/malformed/expired/wrong-slug tokens",
+      "status": "partial",
+      "evidence": "`middleware.ts` exists at project root. It uses `jwtVerify` from `jose`, reads `PROMPTKIT_TOKEN_SECRET`, validates `?t=` parameter, checks `payload.slug !== slug`, and has `matcher: [\"/promptkit/:slug*\"]`. However, the `deny()` function uses `NextResponse.rewrite(url)` to `/__promptkit_404` (a non-existent route). While this renders the Next.js 404 UI, `NextResponse.rewrite()` does not guarantee an HTTP 404 status code — the response status depends on the rewritten route. Since `/__promptkit_404` has no matching handler, Next.js should ultimately return 404 via its not-found handling, but the status code propagation through a middleware rewrite is not guaranteed to be a true 404 at the HTTP layer.",
+      "confidence": "medium"
+    },
+    {
+      "criterion": "The JWT payload includes: `slug` (must match the request URL), `iat` (issued at), `exp` (expiry — default 90 days from issuance)",
+      "status": "met",
+      "evidence": "`scripts/generate-promptkit-token.ts` builds token with: `new SignJWT({ slug })` (slug claim), `.setIssuedAt()` (iat claim), `.setExpirationTime('7776000s')` i.e. 90×24×60×60 seconds (exp claim). All three required JWT payload fields are present.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "A token-generation utility exists at `scripts/generate-promptkit-token.ts` that produces a signed token for a given slug, outputs the full URL ready to paste into Substack",
+      "status": "met",
+      "evidence": "`scripts/generate-promptkit-token.ts` exists. It accepts a UUID slug via `process.argv[2]`, reads `PROMPTKIT_TOKEN_SECRET` from `.env.local`, signs a JWT with `slug`/`iat`/`exp`, and prints `https://multimodeai.com/promptkit/[slug]?t=[token]`. Usage: `npx tsx scripts/generate-promptkit-token.ts <uuid-slug>`.",
+      "confidence": "high"
+    },
+    {
+      "criterion": "Edge rate limiting is applied to `/promptkit/*` requests: 10 requests per IP per hour; above threshold return 429 or 404 without rendering content",
+      "status": "partial",
+      "evidence": "`middleware.ts` implements in-memory rate limiting via `rateLimitMap` with `RATE_LIMIT_MAX = 10` and `RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000` (1 hour). Rate-limited requests are passed to `deny()`. However: (1) the response is a rewrite (not a 429), returning a generic 404-like page instead of HTTP 429; (2) in-memory maps do not persist across edge function instances/restarts on Vercel, making this rate limiter ineffective in a distributed edge deployment. The spec explicitly mentions Vercel rate limiting or middleware-based equivalent (with escalation note about Upstash/Redis for distributed scenarios).",
+      "confidence": "medium"
+    },
+    {
+      "criterion": "The 404 response returned by middleware for invalid/expired tokens is INDISTINGUISHABLE from a 404 for a non-existent URL — no information leak",
+      "status": "partial",
+      "evidence": "`middleware.ts` `deny()` rewrites to `/__promptkit_404` for ALL failure modes (missing token, bad signature, expired, wrong slug, rate limit). No error messages like 'token expired' appear anywhere in middleware (grep confirmed). The rendered page will show the same UI. However, `NextResponse.rewrite()` may produce HTTP 200 status code at the middleware layer while the rewritten destination (non-existent `/__promptkit_404` route) returns 404 — this could result in inconsistent HTTP status codes vs. a true Next.js notFound(), which is a potential information signal at the HTTP level (though the body content would be identical).",
+      "confidence": "medium"
+    },
+    {
+      "criterion": "After Vercel deployment, prompt-kit URLs work only with valid signed tokens; accessing without a token returns 404; expired/wrong-slug token returns 404",
+      "status": "unverifiable",
+      "evidence": "Cannot verify deployed runtime behavior from static analysis. The middleware logic is structurally correct for these scenarios: no `?t=` → `deny()`, malformed token → `jwtVerify` throws → `deny()`, expired token → `jwtVerify` throws (jose validates exp) → `deny()`, wrong slug → `payload.slug !== slug` → `deny()`. Runtime verification on Vercel required.",
+      "confidence": "medium"
+    }
+  ],
+  "constraints": [
+    {
+      "constraint": "Use the existing Next.js 14 App Router stack as the implementation foundation",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`package.json` shows `\"next\": \"14.2.18\"`. App Router structure used throughout (`app/` directory, `layout.tsx`, server components, `middleware.ts`)."
+    },
+    {
+      "constraint": "Use Tailwind CSS for styling, matching the spare aesthetic of the existing landing page components",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`components/PromptKitLayout.tsx` uses only Tailwind utility classes. All custom color tokens (`cream`, `beige`, `charcoal`, `warm-gray`, `sage`, `sage-dark`) are defined in `tailwind.config.ts` and match existing component styling."
+    },
+    {
+      "constraint": "Use server components (App Router default) for the dynamic route",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`app/promptkit/[slug]/page.tsx` has no `'use client'` directive — it is a server component by default. File-system reads and `notFound()` calls are server-side operations."
+    },
+    {
+      "constraint": "Use middleware (`middleware.ts`) for token validation on every `/promptkit/*` request — token check happens BEFORE the page renders",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`middleware.ts` with `matcher: [\"/promptkit/:slug*\"]` intercepts all promptkit requests. Token validation runs before any page component renders."
+    },
+    {
+      "constraint": "Add `gray-matter` for frontmatter parsing of the prompt-kit markdown files",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`package.json` dependencies include `\"gray-matter\": \"^4.0.3\"`. Used in `app/promptkit/[slug]/page.tsx` via `import matter from \"gray-matter\"` and `matter(raw).content`."
+    },
+    {
+      "constraint": "Add a JWT library (`jose`) for token signing and validation",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`package.json` includes `\"jose\": \"^6.2.3\"`. Used in `middleware.ts` (`jwtVerify`) and `scripts/generate-promptkit-token.ts` (`SignJWT`)."
+    },
+    {
+      "constraint": "Use `PROMPTKIT_TOKEN_SECRET` environment variable on Vercel for JWT signing",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`middleware.ts` line 37: `const secret = process.env.PROMPTKIT_TOKEN_SECRET`. `scripts/generate-promptkit-token.ts` also reads this env var from `.env.local`."
+    },
+    {
+      "constraint": "Use UUID v4 (or similar non-enumerable identifier) for prompt-kit slugs",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "Both content files use valid UUID v4-format slugs: `a8f3b2c1-7d4e-4f9a-b1c2-9d3e8f7a6b5c` and `c4e9d7a2-3f8b-4c1a-9e5d-7f2b8a4c6d1e`. The dynamic route validates slugs against `/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/` pattern."
+    },
+    {
+      "constraint": "Preserve all existing pages and components unchanged in their visual output and behavior",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`app/page.tsx`, `components/Hero.tsx`, `Services.tsx`, `HowItWorks.tsx`, `WhyUs.tsx`, `Contact.tsx`, `Footer.tsx` — all exist and appear unmodified. No changes to existing component styling, content, or behavior observed."
+    },
+    {
+      "constraint": "Return a generic 404 response (indistinguishable) for invalid tokens, expired tokens, missing tokens, or non-existent slugs",
+      "type": "must_do",
+      "status": "not_assessed",
+      "evidence": "All failure modes route to `deny()` which rewrites to `/__promptkit_404`. No token-specific error messages present. However, `NextResponse.rewrite()` may not guarantee HTTP 404 status code vs. a true `notFound()` call — the HTTP status code indistinguishability is uncertain."
+    },
+    {
+      "constraint": "Set token expiry to 90 days by default (adjustable per environment)",
+      "type": "must_do",
+      "status": "satisfied",
+      "evidence": "`scripts/generate-promptkit-token.ts`: `const NINETY_DAYS_SECONDS = 90 * 24 * 60 * 60` and `.setExpirationTime('7776000s')`. The `PROMPTKIT_BASE_URL` env var is also supported for adjustability."
+    },
+    {
+      "constraint": "Do not render an 'Other prompt kits' navigation list anywhere on the prompt-kit page",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "`components/PromptKitLayout.tsx` sidebar contains only two CTAs (consulting and newsletter). No catalog, navigation, or file-system enumeration of other prompt kits found."
+    },
+    {
+      "constraint": "Do not use enumerable slugs like `20260514_847_promptkit_1` or `prompt-kit-1`. Use UUIDs",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "Both content files use UUID v4 slugs. The token generator script validates against UUID pattern before accepting input."
+    },
+    {
+      "constraint": "Do not return any token-specific error messages to the user",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "Grep for 'token expired', 'token invalid', 'invalid token', 'expired token', 'bad token' in `middleware.ts` returned no matches. All failure modes silently rewrite to `/__promptkit_404`."
+    },
+    {
+      "constraint": "Do not log or expose the list of valid slugs anywhere publicly accessible — including sitemap, internal links, error messages, or response headers",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "Sitemap contains no promptkit entries. No internal links to promptkit URLs in `app/` or `components/`. No slug enumeration in headers or error responses observed."
+    },
+    {
+      "constraint": "Do not introduce a different framework (Astro, Remix, Eleventy, etc.)",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "`package.json` shows Next.js 14 as the only framework. No Astro, Remix, or other framework dependencies."
+    },
+    {
+      "constraint": "Do not add more than one markdown rendering dependency — pick either `react-markdown` or `next-mdx-remote`, not both",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "`package.json` includes only `react-markdown` (with `remark-gfm`). `next-mdx-remote` is absent."
+    },
+    {
+      "constraint": "Do not link to any `/promptkit/*` URL from any indexed page on the site",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "Search for `/promptkit/` across `app/` and `components/` returned no matches in `app/page.tsx` or any component file."
+    },
+    {
+      "constraint": "Do not include `/promptkit/*` URLs in the sitemap",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "`public/sitemap.xml` contains only the root URL `https://multimodeai.com`. No promptkit entries."
+    },
+    {
+      "constraint": "Do not modify `app/page.tsx` or any existing component visually",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "`app/page.tsx` imports and renders only the original six components unchanged. All existing components (`Hero`, `Services`, `HowItWorks`, `WhyUs`, `Contact`, `Footer`) show no promptkit-related modifications."
+    },
+    {
+      "constraint": "Do not statically pre-generate prompt-kit pages at build time",
+      "type": "must_not",
+      "status": "satisfied",
+      "evidence": "`generateStaticParams()` returns `[]` and `export const dynamic = \"force-dynamic\"` is set, ensuring on-demand rendering only."
+    },
+    {
+      "constraint": "Prefer server-side rendering (per-request token validation) over static generation for prompt-kit pages",
+      "type": "prefer",
+      "status": "satisfied",
+      "evidence": "`export const dynamic = \"force-dynamic\"` and `generateStaticParams()` returning `[]` enforce per-request rendering."
+    },
+    {
+      "constraint": "Prefer a minimal sidebar component (one file) over a multi-component sidebar",
+      "type": "prefer",
+      "status": "satisfied",
+      "evidence": "The entire layout including sidebar is in a single file: `components/PromptKitLayout.tsx`."
+    },
+    {
+      "constraint": "Prefer plain markdown over MDX",
+      "type": "prefer",
+      "status": "satisfied",
+      "evidence": "Content files are `.md` files. `react-markdown` is used (not `next-mdx-remote` or MDX processing)."
+    },
+    {
+      "constraint": "Prefer a single `PromptKitLayout.tsx` component handling both content rendering and sidebar",
+      "type": "prefer",
+      "status": "satisfied",
+      "evidence": "`components/PromptKitLayout.tsx` handles both the main `<article>` content (via `ReactMarkdown`) and the `<aside>` sidebar in one file."
+    },
+    {
+      "constraint": "If Vercel rate limiting requires a paid plan, confirm with Hud before assuming it's available — fall back to middleware-based rate limiter if needed",
+      "type": "escalate",
+      "status": "satisfied",
+      "evidence": "Implementation uses a middleware-based in-memory rate limiter (the fallback). However, the in-memory approach (`rateLimitMap`) doesn't persist across edge function instances on Vercel, which is the known limitation the escalation note warned about. A Redis-backed solution (Upstash) was suggested but not implemented."
+    }
+  ],
+  "definitionOfDone": {
+    "met": false,
+    "reasoning": "Most acceptance criteria are met with high confidence: the dynamic route (AC#1), noindex metadata (AC#2), generateStaticParams empty array (AC#3), PromptKitLayout component (AC#4), two-CTA-only sidebar with no cross-promptkit nav (AC#5), UUID slug content files (AC#6), robots.txt (AC#7), sitemap exclusion (AC#8), no internal linking (AC#10), markdown rendering (AC#11), Tailwind visual register (AC#12), JWT payload fields (AC#14), and token generation script (AC#15) are all fully satisfied. However, three criteria have meaningful gaps: (1) AC#13/AC#17 — the `deny()` function uses `NextResponse.rewrite()` to `/__promptkit_404` (a non-existent route) instead of a true Next.js `notFound()` or a `NextResponse` with status 404. While the body content will appear as a generic 404, the HTTP status code indistinguishability from a true 404 is not guaranteed at the middleware layer. (2) AC#16 — rate limiting is implemented as in-memory only (`rateLimitMap`), which resets on each cold start or across distributed edge function instances on Vercel, making it ineffective in a real edge deployment. (3) AC#9 (build success) and AC#18 (deployed runtime behavior) are unverifiable without execution. The in-memory rate limiter and rewrite-based 404 approach represent partial implementations of two security-critical criteria. The definition of done is not fully met until these are verified or remediated."
+  },
+  "summary": {
+    "totalCriteria": 18,
+    "met": 13,
+    "notMet": 0,
+    "partial": 3,
+    "unclear": 0,
+    "unverifiable": 2,
+    "score": "13/16 verifiable criteria met (2 runtime-only)"
+  }
+}

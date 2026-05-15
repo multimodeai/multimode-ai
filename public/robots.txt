@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /promptkit/
 
 Sitemap: https://multimodeai.com/sitemap.xml
