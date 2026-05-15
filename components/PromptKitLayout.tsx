@@ -117,7 +117,7 @@ export default function PromptKitLayout({ title, content }: Props) {
             <section className="border-l-2 border-sage pl-5">
               <h3 className="text-lg font-medium mb-2">want help applying this?</h3>
               <p className="text-warm-gray text-sm leading-relaxed mb-4">
-                we build private AI agents for muslim-owned businesses. book a
+                we build private AI agents you stay in control of. book a
                 15-minute call.
               </p>
               <a
@@ -131,7 +131,7 @@ export default function PromptKitLayout({ title, content }: Props) {
             <section className="border-l-2 border-sage pl-5">
               <h3 className="text-lg font-medium mb-2">more like this</h3>
               <p className="text-warm-gray text-sm leading-relaxed mb-4">
-                prompt kits and field notes for muslim builders shipping with AI.
+                prompt kits and field notes from a muslim builder shipping with AI.
               </p>
               <a
                 href="https://multimodeai.substack.com"
