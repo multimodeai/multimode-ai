@@ -81,9 +81,15 @@ export default function PromptKitLayout({ title, content }: Props) {
                   );
                 },
                 pre: ({ children }) => (
-                  <pre className="bg-beige border border-warm-gray/15 rounded-sm p-4 overflow-x-auto text-sm leading-relaxed mb-5 whitespace-pre-wrap">
-                    {children}
-                  </pre>
+                  <details className="mb-5 group">
+                    <summary className="cursor-pointer select-none text-sm font-medium text-sage-dark hover:text-charcoal transition-colors list-none flex items-center gap-2 py-2">
+                      <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
+                      <span>Show prompt text</span>
+                    </summary>
+                    <pre className="bg-beige border border-warm-gray/15 rounded-sm p-4 overflow-x-auto text-sm leading-relaxed mt-2 whitespace-pre-wrap">
+                      {children}
+                    </pre>
+                  </details>
                 ),
                 table: ({ children }) => (
                   <div className="overflow-x-auto mb-6">
