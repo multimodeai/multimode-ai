@@ -214,6 +214,20 @@ claude mcp add ground-truth -- npx -y @hududed/ground-truth-mcp
             Click a mark to see why - a word-level diff against the licensed source.
           </figcaption>
         </figure>
+        <figure className="mt-10 m-0">
+          <div className="overflow-hidden rounded-xl border border-charcoal/10 bg-[#0b0f16]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/ground-truth/mcp-citation-check.png"
+              alt="Claude Code auto-triggering the Ground Truth MCP tool on the phrase 'check these citations', correctly reporting one valid, one fabricated, and one name/number-mismatched Quran reference"
+              className="block w-full h-auto"
+            />
+          </div>
+          <figcaption className="mt-3 text-sm text-warm-gray">
+            The MCP server in Claude Code - the tool triggered on its own, no need to name it, and
+            correctly called out the fabricated and mismatched references.
+          </figcaption>
+        </figure>
 
         <div className="mt-10 max-w-2xl">
           <h3 className="font-semibold text-charcoal">What green, red, and amber mean</h3>
