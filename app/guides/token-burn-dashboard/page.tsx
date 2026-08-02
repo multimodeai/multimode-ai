@@ -221,7 +221,7 @@ const chatgptEstimate = {
           <div className="overflow-hidden rounded-xl border border-charcoal/10 bg-[#0b0f16]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/guides/token-burn-dashboard/dashboard-overview.png"
+              src="https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/token-burn-dashboard/dashboard-overview.png"
               alt="The live demo's daily heatmap view: three lanes (Claude Code, Codex, ChatGPT), measured totals, and a 90/180/1-year/all-time range selector"
               className="block w-full h-auto"
             />
@@ -235,7 +235,7 @@ const chatgptEstimate = {
           <div className="overflow-hidden rounded-xl border border-charcoal/10 bg-[#0b0f16]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/guides/token-burn-dashboard/model-phases.png"
+              src="https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/token-burn-dashboard/model-phases.png"
               alt="An additional view on the live demo showing model mix and a work-phase breakdown"
               className="block w-full h-auto"
             />

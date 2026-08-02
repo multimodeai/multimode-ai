@@ -191,7 +191,7 @@ claude mcp add ground-truth -- npx -y @hududed/ground-truth-mcp
           <div className="overflow-hidden rounded-xl border border-charcoal/10 bg-[#0b0f16]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/guides/ground-truth/auto-scan-badges.png"
+              src="https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/ground-truth/auto-scan-badges.png"
               alt="Ground Truth badges appearing inline next to five Quran citations in a chat response"
               className="block w-full h-auto"
             />
@@ -205,7 +205,7 @@ claude mcp add ground-truth -- npx -y @hududed/ground-truth-mcp
           <div className="overflow-hidden rounded-xl border border-charcoal/10 bg-[#0b0f16]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/guides/ground-truth/mismatch-tooltip-expanded.png"
+              src="https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/ground-truth/mismatch-tooltip-expanded.png"
               alt="Expanded tooltip showing exactly which word differs between the quoted Arabic and the real ayah"
               className="block w-full h-auto"
             />

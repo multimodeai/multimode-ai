@@ -28,7 +28,7 @@ const guides: Guide[] = [
     title: "Ground Truth",
     tagline:
       "A Chrome extension and MCP server that check whether an AI's Quran citation actually exists, and whether the Arabic it quoted matches the real text.",
-    image: "/guides/ground-truth/auto-scan-badges.png",
+    image: "https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/ground-truth/auto-scan-badges.png",
     kind: "Extension + MCP",
     verdict: "Deterministic, not an AI judgment call. Free. Open for anyone to help extend.",
   },
@@ -37,7 +37,7 @@ const guides: Guide[] = [
     title: "Token Burn Dashboard",
     tagline:
       "A GitHub-style dashboard tracking real AI token usage across Claude Code, Codex, and ChatGPT - measured and estimated numbers kept honestly separate, never summed.",
-    image: "/guides/token-burn-dashboard/dashboard-overview.png",
+    image: "https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/token-burn-dashboard/dashboard-overview.png",
     kind: "Usage analytics",
     verdict: "Live on my own usage today. A build-your-own guide is coming.",
   },
