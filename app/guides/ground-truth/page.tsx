@@ -38,11 +38,14 @@ export default function GroundTruthGuide() {
           own agent. Same checking engine either way.
         </p>
         <p className="mt-4 max-w-2xl text-sm text-warm-gray">
-          {/* TODO: replace this line with a real <a href="..."> the moment the "Ground Truth"
-              newsletter post is live on Substack - do not fabricate a URL before then. See
-              mm-cli/drafts/ground-truth/newsletter-roadmap.md for the draft. */}
-          Why this exists, and the real bugs found building it against itself → newsletter post
-          landing soon.
+          Why this exists, and the real bugs found building it against itself →{" "}
+          <a
+            href="https://multimodeai.substack.com/p/ground-truth-a-fact-checker-for-ais"
+            className="text-sage-dark underline hover:no-underline"
+          >
+            read the full newsletter post
+          </a>
+          .
         </p>
       </section>
 
@@ -53,10 +56,21 @@ export default function GroundTruthGuide() {
         </p>
         <h2 className="mt-3 text-3xl font-bold tracking-tight">Install the browser extension</h2>
         <p className="mt-4 max-w-2xl text-warm-gray leading-relaxed">
-          Works today in Chrome, Edge, Brave - any Chromium browser. Not on the Chrome Web Store
-          yet (submitted, in developer-account verification), so load it unpacked from source:
+          Works today in Chrome, Edge, Brave - any Chromium browser. Live on the Chrome Web
+          Store:
         </p>
-        <ol className="mt-6 max-w-2xl space-y-3 text-warm-gray leading-relaxed list-decimal list-inside marker:font-semibold marker:text-sage-dark">
+        <p className="mt-4">
+          <a
+            href="https://chromewebstore.google.com/detail/ground-truth/dfbjdoiolknmobgaklkhcnbimipdjlof"
+            className="inline-block rounded-lg bg-sage-dark px-5 py-2.5 text-cream font-semibold hover:opacity-90 transition-opacity"
+          >
+            Add to Chrome - free
+          </a>
+        </p>
+        <p className="mt-6 max-w-2xl text-sm text-warm-gray leading-relaxed">
+          Prefer to run from source instead?
+        </p>
+        <ol className="mt-3 max-w-2xl space-y-3 text-warm-gray leading-relaxed list-decimal list-inside marker:font-semibold marker:text-sage-dark">
           <li>
             Clone the repo:{" "}
             <code className="text-sm bg-charcoal/5 rounded px-1.5 py-0.5 font-mono">
@@ -283,8 +297,14 @@ npx -y @hududed/ground-truth-mcp
           <div>
             <h3 className="font-semibold text-charcoal">Browser extension</h3>
             <p className="mt-2 text-warm-gray leading-relaxed">
-              Chrome Web Store: submitted, in developer-account verification. Load unpacked from
-              source until it clears (Step 1 above).
+              Live on the{" "}
+              <a
+                href="https://chromewebstore.google.com/detail/ground-truth/dfbjdoiolknmobgaklkhcnbimipdjlof"
+                className="text-sage-dark underline hover:no-underline"
+              >
+                Chrome Web Store
+              </a>
+              . Loading unpacked from source (Step 1 above) still works too.
             </p>
           </div>
           <div>
