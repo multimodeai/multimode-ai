@@ -24,6 +24,15 @@ type Guide = {
 
 const guides: Guide[] = [
   {
+    slug: "kaya-editor",
+    title: "Kaya Editor",
+    tagline:
+      "A local browser review surface for agent-written plans and specs - annotate specific lines, send the notes back as structured feedback, export a standalone copy. No account, no upload.",
+    image: "https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/kaya-editor/01-overview.png",
+    kind: "CLI + browser",
+    verdict: "Free and offline. Clean-room built, reimplemented from behaviour rather than forked.",
+  },
+  {
     slug: "ground-truth",
     title: "Ground Truth",
     tagline:
@@ -39,7 +48,7 @@ const guides: Guide[] = [
       "A GitHub-style dashboard tracking real AI token usage across Claude Code, Codex, and ChatGPT - measured and estimated numbers kept honestly separate, never summed.",
     image: "https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/token-burn-dashboard/dashboard-overview.png",
     kind: "Usage analytics",
-    verdict: "Live on my own usage today. A build-your-own guide is coming.",
+    verdict: "Live on my own usage today. Build-your-own guide and newsletter are both up.",
   },
 ];
 
