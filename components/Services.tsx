@@ -1,35 +1,56 @@
-const services = [
+type Feature = string | { text: string; href: string };
+
+const services: {
+  title: string;
+  subtitle: string;
+  description: string;
+  features: Feature[];
+}[] = [
   {
-    title: "customer agent",
-    subtitle: "your 24/7 front desk",
+    title: "funding discovery",
+    subtitle: "find the work you are missing",
     description:
-      "Answers customer questions, takes bookings, sends reminders — on WhatsApp and web. You review and approve. It never sleeps.",
+      "Opportunity monitoring for small businesses and research labs chasing federal funding. It reads the solicitations, filters against what you actually do, and flags the ones worth your week.",
     features: [
-      "Handles inquiries + FAQs automatically",
-      "Books appointments + reduces no-shows",
-      "You stay in control — approve or override anytime",
+      "Matched against your real capability, not keywords",
+      "Deadlines, eligibility, and set-aside status surfaced up front",
+      "Built by someone who has written funded SBIR proposals",
     ],
   },
   {
-    title: "morning brief",
-    subtitle: "your day, ready before you are",
+    title: "bespoke builds",
+    subtitle: "software where the data is sensitive",
     description:
-      "A daily digest of bookings, messages, and tasks — delivered to your WhatsApp or email before you start work. Includes draft replies for anything that needs you.",
+      "Web applications and internal tools, usually where the process is audited or the data cannot leave. Scoped honestly — you get told what is hard before you pay for it.",
     features: [
-      "Today's schedule + flagged messages",
-      "Draft replies ready for your approval",
-      "Priority tagging by topic (sales, ops, support)",
+      "Bayesian optimisation platform for a research group",
+      "Sovereign document-redaction system for government use",
+      "Audit trails and receipts, not just output",
     ],
   },
   {
-    title: "workflow autopilot",
-    subtitle: "connect your tools. automate the rest.",
+    title: "see the work",
+    subtitle: "judge it before you hire anyone",
     description:
-      "We link your calendar, email, and business apps into automated workflows — so routine tasks run themselves. Full audit log so you see everything.",
+      "Products that are live, benchmarks you can check, and design you can look at. The cheapest due diligence available before you hire anyone.",
     features: [
-      "Calendar, email, CRM integrations",
-      "Scheduled actions + triggered automations",
-      "Complete audit trail of every action taken",
+      {
+        text: "Ground Truth — catches AI fabricating Quran and hadith citations",
+        href: "/guides/ground-truth",
+      },
+      {
+        text: "girih-bench — a visual model benchmark you cannot game",
+        href: "/benchmarks/girih-bench",
+      },
+      {
+        text: "ProWasl — trusted local help, fair to the people who do it",
+        href: "https://prowasl.com",
+      },
+      {
+        text: "BayanLab — halal and Muslim community data",
+        href: "https://bayanlab.com",
+      },
+      { text: "Hudphoto — if you want to see the taste", href: "https://hudphoto.com" },
     ],
   },
 ];
@@ -39,11 +60,11 @@ export default function Services() {
     <section id="services" className="px-6 md:px-12 lg:px-24 py-24 bg-beige">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-semibold mb-4">
-          what we build
+          what I do
         </h2>
         <p className="text-warm-gray mb-16 max-w-2xl">
-          AI agents trained on your business, connected to your tools, and built
-          so you stay in control.
+          Three things, and they share a shape: the work is regulated, the
+          paperwork matters, and somebody has to be able to check it afterwards.
         </p>
         <div className="grid md:grid-cols-3 gap-12">
           {services.map((service) => (
@@ -56,15 +77,28 @@ export default function Services() {
                 {service.description}
               </p>
               <ul className="space-y-2">
-                {service.features.map((feature) => (
-                  <li
-                    key={feature}
-                    className="text-sm text-warm-gray flex items-start gap-2"
-                  >
-                    <span className="text-sage mt-0.5 shrink-0">&#10003;</span>
-                    {feature}
-                  </li>
-                ))}
+                {service.features.map((feature) => {
+                  const isLink = typeof feature !== "string";
+                  const text = isLink ? feature.text : feature;
+                  return (
+                    <li
+                      key={text}
+                      className="text-sm text-warm-gray flex items-start gap-2"
+                    >
+                      <span className="text-sage mt-0.5 shrink-0">&#10003;</span>
+                      {isLink ? (
+                        <a
+                          href={feature.href}
+                          className="text-sage-dark underline underline-offset-2 hover:text-charcoal transition-colors"
+                        >
+                          {text}
+                        </a>
+                      ) : (
+                        text
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

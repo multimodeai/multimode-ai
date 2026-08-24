@@ -40,11 +40,11 @@ export default function Contact() {
     <section id="contact" className="px-6 md:px-12 lg:px-24 py-24">
       <div className="max-w-2xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-semibold mb-4">
-          stop doing what a machine should do.
+          let's see if this is worth your time.
         </h2>
         <p className="text-warm-gray mb-12">
-          book a 15-minute call. we&apos;ll show you what your agent could
-          handle by next week.
+          bring a solicitation you chased or missed. thirty minutes, no deck, and
+          I&apos;ll tell you straight if I am not the right fit.
         </p>
 
         <div className="mb-10">
@@ -104,7 +104,7 @@ export default function Contact() {
                 setFormData({ ...formData, message: e.target.value })
               }
               className="w-full px-4 py-3 bg-cream border border-warm-gray/20 focus:border-sage focus:outline-none transition-colors resize-none"
-              placeholder="bookings, customer messages, daily ops..."
+              placeholder="what are you chasing, and what is slowing it down?"
             />
           </div>
 

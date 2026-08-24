@@ -1,27 +1,33 @@
 const reasons = [
   {
-    title: "values-aligned",
+    title: "I have been through it",
     description:
-      "Built with tools and vendors you can feel good about. Your data stays yours.",
+      "Proposals I have worked on have won over $5M in federal awards, on a process built to ship 30+ a year. Not a vendor who read about SBIR — I know which parts are genuinely hard, and I will tell you before you pay.",
   },
   {
-    title: "muslim-owned",
-    description: "Supporting the ummah, one business at a time.",
+    title: "checkable, not trusted",
+    description:
+      "Everything leaves a trail — what it read, what it matched, why it decided. Verification is a feature, not a promise.",
   },
   {
-    title: "private by default",
+    title: "honest scope",
     description:
-      "Your AI agent runs on isolated infrastructure. Not shared. Not scraped.",
+      "You get told what I do not know. There is a whole half of federal contracting — post-award accounting, DCAA red tape — that I have never owned, and I will say so.",
   },
   {
-    title: "human in the loop",
+    title: "your data stays put",
     description:
-      "Every agent is built so you approve, review, and override. AI handles the work, you make the calls.",
+      "Sensitive work runs on infrastructure you control. I have built sovereign redaction systems for exactly this reason.",
+  },
+  {
+    title: "public work",
+    description:
+      "Some of what I build is open. Read it before you hire me — it is the cheapest due diligence available.",
   },
   {
     title: "direct access",
     description:
-      "Talk to the builder directly. No support tickets, no runaround.",
+      "You talk to the person building it. No account manager, no ticket queue.",
   },
 ];
 
@@ -30,7 +36,7 @@ export default function WhyUs() {
     <section id="why-us" className="px-6 md:px-12 lg:px-24 py-24 bg-beige">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-semibold mb-16">
-          why choose us
+          why me
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
           {reasons.map((reason) => (
