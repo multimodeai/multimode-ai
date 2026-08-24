@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Multimode AI — AI agents for work that has rules",
     description:
-      "Private AI agents that handle bookings, answer customers, and run daily operations. Muslim-owned. Values-aligned.",
+    "Federal proposals, grant compliance, sensitive data. Systems that find the work, keep the paperwork straight, and show their working.",
     url: "https://multimodeai.com",
     siteName: "Multimode AI",
     locale: "en_US",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "Multimode AI — AI agents for work that has rules",
     description:
-      "Private AI agents that handle bookings, answer customers, and run daily operations. Muslim-owned. Values-aligned.",
+    "Federal proposals, grant compliance, sensitive data. Systems that find the work, keep the paperwork straight, and show their working.",
   },
 };
 
