@@ -217,16 +217,16 @@ export default function Page() {
       <P>
         Caville, E., Kayser, S., Layeghy, S., Sung, B., Dolnicar, S., Portmann,
         M. (2026). SIREN: PAIR-Driven Preference Manipulation in Web-RAG
-        Recommenders. arXiv:2607.21951.
+        Recommenders. <a className="underline" href="https://arxiv.org/abs/2607.21951">arXiv:2607.21951</a>.
       </P>
       <P>
         Zhang, T., Triedman, H., Shmatikov, V. (2026). Deep-Research Agents Can
-        Be Poisoned via User-Generated Content. arXiv:2605.24245.
+        Be Poisoned via User-Generated Content. <a className="underline" href="https://arxiv.org/abs/2605.24245">arXiv:2605.24245</a>.
       </P>
       <P>
         Zhu, P., Li, L., Yang, L., Su, S., Shao, J. (2026). Is Deep Research
-        Reliable? Misleading Knowledge Induces False Conclusions.
-        arXiv:2607.20891.
+        Reliable? Misleading Knowledge Induces False Conclusions.{" "}
+        <a className="underline" href="https://arxiv.org/abs/2607.20891">arXiv:2607.20891</a>.
       </P>
     </main>
   );

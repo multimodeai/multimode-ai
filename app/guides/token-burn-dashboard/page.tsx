@@ -36,6 +36,16 @@ export default function TokenBurnDashboardGuide() {
           exact counts where your tools actually report them, and an honestly labeled estimate
           where one doesn&rsquo;t.
         </p>
+        <p className="mt-4 max-w-2xl text-sm text-warm-gray">
+          Why this exists, and what auditing my own AI delegation actually revealed →{" "}
+          <a
+            href="https://multimodeai.substack.com/p/i-built-a-dashboard-that-tracks-every"
+            className="text-sage-dark underline hover:no-underline"
+          >
+            read the full newsletter post
+          </a>
+          .
+        </p>
       </section>
 
       {/* what you'll build */}
