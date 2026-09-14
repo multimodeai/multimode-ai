@@ -35,3 +35,7 @@ yarn-error.log*
 next-env.d.ts
 
 docs.claude/
+
+# Prompt-kit plaintext never enters this PUBLIC repo - only the encrypted .md.enc.
+content/promptkits/*.md
+!content/promptkits/*.md.enc

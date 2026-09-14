@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import PromptKitLayout from "@/components/PromptKitLayout";
+import { decryptContent } from "@/lib/promptkit-crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -32,18 +33,26 @@ export default async function PromptKitPage({
 }) {
   if (!SLUG_PATTERN.test(params.slug)) notFound();
 
-  const filePath = path.join(
-    process.cwd(),
-    "content/promptkits",
-    `${params.slug}.md`
-  );
+  const base = path.join(process.cwd(), "content/promptkits", params.slug);
 
-  let raw: string;
+  // Encrypted at rest. This repo is public, and committing plaintext made every
+  // paid kit readable straight off raw.githubusercontent.com, bypassing the JWT
+  // gate entirely. See lib/promptkit-crypto.ts.
+  //
+  // Plaintext is still accepted as a fallback so a kit that has not been
+  // re-encrypted yet does not 404. Remove that branch once every kit ships
+  // as .md.enc.
+  let raw: string | undefined;
   try {
-    raw = await fs.readFile(filePath, "utf8");
+    raw = decryptContent(await fs.readFile(`${base}.md.enc`, "utf8"));
   } catch {
-    notFound();
+    try {
+      raw = await fs.readFile(`${base}.md`, "utf8");
+    } catch {
+      notFound();
+    }
   }
+  if (raw === undefined) notFound();
 
   let content: string;
   try {
