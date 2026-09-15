@@ -42,17 +42,19 @@ export default async function PromptKitPage({
   // Plaintext is still accepted as a fallback so a kit that has not been
   // re-encrypted yet does not 404. Remove that branch once every kit ships
   // as .md.enc.
-  let raw: string | undefined;
+  // Encrypted-only. There is deliberately NO plaintext fallback: plaintext is
+  // gitignored so it never deploys, which means a fallback could only ever
+  // succeed on a developer's machine - letting someone add a kit, see it work
+  // locally, commit, and ship a 404. Failing here instead means a missing
+  // encrypt step is caught before it reaches production.
+  //
+  // After adding or editing a kit: npx tsx scripts/encrypt-promptkits.ts
+  let raw: string;
   try {
     raw = decryptContent(await fs.readFile(`${base}.md.enc`, "utf8"));
   } catch {
-    try {
-      raw = await fs.readFile(`${base}.md`, "utf8");
-    } catch {
-      notFound();
-    }
+    notFound();
   }
-  if (raw === undefined) notFound();
 
   let content: string;
   try {
