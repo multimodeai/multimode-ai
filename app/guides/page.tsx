@@ -42,6 +42,15 @@ const guides: Guide[] = [
     verdict: "Deterministic, not an AI judgment call. Free. Open for anyone to help extend.",
   },
   {
+    slug: "token-tax",
+    title: "Token Tax",
+    tagline:
+      "A size gate for Claude Code file reads, plus a reporter that reads your own session transcripts - and a ceiling metric telling you the most a gate could ever save you, before you install one.",
+    image: "https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/guides/token-tax/ceiling-output.png",
+    kind: "Hook + CLI",
+    verdict: "MIT, zero dependencies. Deliberately refuses to print a \u201cyou saved X\u201d number.",
+  },
+  {
     slug: "token-burn-dashboard",
     title: "Token Burn Dashboard",
     tagline:
