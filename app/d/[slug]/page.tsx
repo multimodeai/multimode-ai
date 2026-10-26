@@ -8,7 +8,7 @@ import { TRADES } from "./scripts";
 const DATA_URL =
   "https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/demos/missed-call-v1.json";
 
-type Entry = { name: string; trade: string; town?: string };
+type Entry = { name: string; trade: string; town?: string; time?: string };
 
 async function getEntry(slug: string): Promise<Entry | null> {
   try {
@@ -37,6 +37,7 @@ export default async function DemoPage({
   if (!entry || !trade) notFound();
 
   const town = entry.town ?? "";
+  const time = entry.time ?? "2:38 PM";
 
   return (
     <main className="min-h-screen bg-cream text-charcoal">
@@ -47,7 +48,7 @@ export default async function DemoPage({
         </p>
 
         <h1 className="text-[28px] font-semibold tracking-tight leading-tight mb-3">
-          A customer calls at 2:38 PM. You&apos;re on a job.
+          A customer calls at {time}. You&apos;re on a job.
         </h1>
         <p className="text-warm-gray leading-relaxed mb-8">
           Today that call rings out, and the customer tries the next number on
@@ -57,7 +58,8 @@ export default async function DemoPage({
 
         <CallDemo
           lines={trade.call(entry.name, town)}
-          ownerText={trade.ownerText(town)}
+          ownerText={trade.ownerText(town, time)}
+          time={time}
           caller={trade.caller}
         />
 

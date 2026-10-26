@@ -7,10 +7,12 @@ export default function CallDemo({
   lines,
   ownerText,
   caller,
+  time,
 }: {
   lines: Line[];
   ownerText: string;
   caller: string;
+  time: string;
 }) {
   const [shown, setShown] = useState(0);
   const total = lines.length + 1;
@@ -26,7 +28,7 @@ export default function CallDemo({
       <div className="rounded-2xl bg-white border border-black/10 p-4 sm:p-5">
         <div className="flex items-center justify-between text-xs text-warm-gray mb-4">
           <span>Incoming call · {caller}</span>
-          <span>Mon 2:38 PM</span>
+          <span>Mon {time}</span>
         </div>
         <div className="space-y-2.5 min-h-[260px]">
           {lines.slice(0, shown).map((l, i) => (
