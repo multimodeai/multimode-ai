@@ -8,7 +8,7 @@ import { TRADES } from "./scripts";
 const DATA_URL =
   "https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/demos/missed-call-v1.json";
 
-type Entry = { name: string; trade: string; town?: string; time?: string; headline?: string; intro?: string };
+type Entry = { name: string; trade: string; town?: string; time?: string; headline?: string; intro?: string; reply?: string };
 
 async function getEntry(slug: string): Promise<Entry | null> {
   try {
@@ -84,8 +84,8 @@ export default async function DemoPage({
 
         <section className="mt-10 rounded-2xl bg-beige p-5">
           <p className="text-[15px] leading-relaxed">
-            Want to hear it on a real call for {entry.name}? Just reply to my
-            text and I&apos;ll set up a number you can ring tonight. No cost.
+            Want to hear it on a real call for {entry.name}? Just reply to my{" "}
+            {entry.reply ?? "text"} and I&apos;ll set up a number you can ring tonight. No cost.
           </p>
           <p className="mt-3 text-sm text-warm-gray">
             Hud Wahab · Multimode AI · Northern Colorado ·{" "}
