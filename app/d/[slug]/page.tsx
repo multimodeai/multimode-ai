@@ -58,6 +58,8 @@ export default async function DemoPage({
         <CallDemo
           lines={trade.call(entry.name, town)}
           ownerText={trade.ownerText(town, time)}
+          steps={trade.after?.(entry.name, town, time)}
+          footnote={trade.footnote}
           time={time}
           caller={trade.caller}
         />

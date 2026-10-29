@@ -3,11 +3,21 @@
 
 export type Line = { who: "assistant" | "caller"; text: string };
 
+export type Step = {
+  label: string;
+  kind: "calendar" | "customer" | "owner" | "after";
+  title?: string;
+  text: string;
+};
+
 export type Trade = {
   label: string;
   caller: string;
   call: (biz: string, town: string) => Line[];
   ownerText: (town: string, at: string) => string;
+  // Optional fuller sequence after the call. Without it, the page shows ownerText only.
+  after?: (biz: string, town: string, at: string) => Step[];
+  footnote?: string;
 };
 
 const where = (town: string) => (town ? ` in ${town}` : "");
@@ -53,13 +63,23 @@ export const TRADES: Record<string, Trade> = {
     label: "garage doors",
     caller: "Tom",
     call: (biz, town) => [
-      { who: "assistant", text: `Thanks for calling ${biz}. The tech's up on a job right now, so I'm picking up for them. What's going on with your door?` },
+      { who: "assistant", text: `Thanks for calling ${biz}, this is their assistant. The tech's up on a job right now. What's going on with your door?` },
       { who: "caller", text: `The spring snapped this morning and the door won't open${where(town)}. My car's stuck inside.` },
-      { who: "assistant", text: "That's a common one and a priority call. Is it a single or double door, and do you know roughly how old it is?" },
-      { who: "caller", text: "Double, maybe 15 years old." },
-      { who: "assistant", text: "Thanks. I'm texting you the first open slot to confirm. While they're out, they may also quote you on a new opener if yours is that age. No pressure." },
+      { who: "assistant", text: "Okay, we'll treat that as a priority. Please don't touch the spring or the cables, they're under a lot of tension. Single or double door?" },
+      { who: "caller", text: "Double. How much is this going to cost me?" },
+      { who: "assistant", text: "Spring replacements usually run $250 to $400 depending on the door. There's a $79 service call, and that's credited if you go ahead. The tech confirms the exact price before starting." },
+      { who: "caller", text: "Fine. Can someone come today?" },
+      { who: "assistant", text: "There's an opening today between 4:30 and 5:30. I've booked it and I'm texting you the details now." },
     ],
-    ownerText: (town, at) => `Priority job, ${at}. Tom: broken spring, double door, ~15 yrs old${where(town)}, car stuck inside. Sent him the next slot. Possible opener upsell.`,
+    ownerText: (town, at) => `Priority job, ${at}. Tom: broken spring, double door${where(town)}, car stuck inside. Booked today 4:30-5:30.`,
+    after: (biz, town, at) => [
+      { label: "On your Google Calendar", kind: "calendar", title: "Today · 4:30-5:30 PM", text: `Spring replacement, double door · Tom · 1420 Elm St${where(town)} · PRIORITY: car stuck inside · quoted range $250-400 + $79 service call` },
+      { label: "Tom gets a text", kind: "customer", text: `Hi Tom, you're booked with ${biz} today 4:30-5:30 PM. Spring replacements usually run $250-400; the tech confirms the price before starting. Reply C to change the time.` },
+      { label: "You get a text", kind: "owner", text: `New priority job, ${at}. Tom, broken spring, double door${where(town)}, car stuck inside. Booked today 4:30-5:30. Full call notes in your email.` },
+      { label: "After the job", kind: "after", text: "You tap Approve on the invoice ($320). Tom gets a pay-by-text link. Nobody reads a card number over the phone." },
+      { label: "Next morning", kind: "after", text: `Tom gets a short thank-you from ${biz} and a link to leave a Google review.` },
+    ],
+    footnote: "Prices here are made-up examples. Yours come from your own price list, and the assistant only ever gives a range. The firm price is always yours, on site.",
   },
   hvac: {
     label: "heating and cooling",

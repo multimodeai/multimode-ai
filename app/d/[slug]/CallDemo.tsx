@@ -1,21 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Line } from "./scripts";
+import type { Line, Step } from "./scripts";
 
 export default function CallDemo({
   lines,
   ownerText,
+  steps,
+  footnote,
   caller,
   time,
 }: {
   lines: Line[];
   ownerText: string;
+  steps?: Step[];
+  footnote?: string;
   caller: string;
   time: string;
 }) {
   const [shown, setShown] = useState(0);
-  const total = lines.length + 1;
+  const after: Step[] =
+    steps && steps.length
+      ? steps
+      : [{ label: "A minute later, on your phone", kind: "owner", text: ownerText }];
+  const total = lines.length + after.length;
 
   useEffect(() => {
     if (shown >= total) return;
@@ -55,19 +63,33 @@ export default function CallDemo({
         </div>
       </div>
 
-      <div
-        className={`mt-5 transition-opacity duration-700 ${
-          shown >= total ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <p className="text-xs uppercase tracking-wider text-warm-gray mb-2">
-          A minute later, on your phone
-        </p>
-        <div className="rounded-2xl bg-charcoal text-white p-4">
-          <p className="text-xs text-white/60 mb-1">Text message</p>
-          <p className="text-[15px] leading-snug">{ownerText}</p>
-        </div>
+      <div className="mt-5 space-y-4">
+        {after.slice(0, Math.max(0, shown - lines.length)).map((st, i) => (
+          <div key={i} className="animate-[fadeIn_0.6s_ease]">
+            <p className="text-xs uppercase tracking-wider text-warm-gray mb-2">{st.label}</p>
+            {st.kind === "calendar" ? (
+              <div className="rounded-2xl bg-white border border-black/10 overflow-hidden">
+                <div className="bg-[#1a73e8] text-white text-xs px-4 py-1.5">Google Calendar</div>
+                <div className="px-4 py-3">
+                  <p className="font-semibold">{st.title}</p>
+                  <p className="text-[14px] leading-snug text-warm-gray mt-1">{st.text}</p>
+                </div>
+              </div>
+            ) : st.kind === "after" ? (
+              <div className="rounded-2xl bg-beige px-4 py-3 text-[15px] leading-snug">{st.text}</div>
+            ) : (
+              <div className={`rounded-2xl p-4 ${st.kind === "owner" ? "bg-charcoal text-white" : "bg-white border border-black/10"}`}>
+                <p className={`text-xs mb-1 ${st.kind === "owner" ? "text-white/60" : "text-warm-gray"}`}>Text message</p>
+                <p className="text-[15px] leading-snug">{st.text}</p>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
+
+      {shown >= total && footnote && (
+        <p className="mt-4 text-xs text-warm-gray leading-relaxed">{footnote}</p>
+      )}
 
       {shown >= total && (
         <button
