@@ -49,6 +49,18 @@ export const TRADES: Record<string, Trade> = {
     ],
     ownerText: (town, at) => `New quote, ${at}. Dana: LVP, 2 bedrooms + hall, ~450 sq ft${where(town)}. Booking a sample visit.`,
   },
+  garage: {
+    label: "garage doors",
+    caller: "Tom",
+    call: (biz, town) => [
+      { who: "assistant", text: `Thanks for calling ${biz}. The tech's up on a job right now, so I'm picking up for them. What's going on with your door?` },
+      { who: "caller", text: `The spring snapped this morning and the door won't open${where(town)}. My car's stuck inside.` },
+      { who: "assistant", text: "That's a common one and a priority call. Is it a single or double door, and do you know roughly how old it is?" },
+      { who: "caller", text: "Double, maybe 15 years old." },
+      { who: "assistant", text: "Thanks. I'm texting you the first open slot to confirm. While they're out, they may also quote you on a new opener if yours is that age. No pressure." },
+    ],
+    ownerText: (town, at) => `Priority job, ${at}. Tom: broken spring, double door, ~15 yrs old${where(town)}, car stuck inside. Sent him the next slot. Possible opener upsell.`,
+  },
   hvac: {
     label: "heating and cooling",
     caller: "Priya",

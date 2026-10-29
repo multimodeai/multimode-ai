@@ -8,7 +8,7 @@ import { TRADES } from "./scripts";
 const DATA_URL =
   "https://pub-51e7ecd47a73445c86f602cbae7029dd.r2.dev/demos/missed-call-v1.json";
 
-type Entry = { name: string; trade: string; town?: string; time?: string };
+type Entry = { name: string; trade: string; town?: string; time?: string; headline?: string; intro?: string };
 
 async function getEntry(slug: string): Promise<Entry | null> {
   try {
@@ -48,12 +48,11 @@ export default async function DemoPage({
         </p>
 
         <h1 className="text-[28px] font-semibold tracking-tight leading-tight mb-3">
-          A customer calls at {time}. You&apos;re on a job.
+          {entry.headline ?? `A customer calls at ${time}. You're on a job.`}
         </h1>
         <p className="text-warm-gray leading-relaxed mb-8">
-          Today that call rings out, and the customer tries the next number on
-          the list. Here is the same call with an assistant picking up for{" "}
-          {entry.name}.
+          {entry.intro ??
+            `Today that call rings out, and the customer tries the next number on the list. Here is the same call with an assistant picking up for ${entry.name}.`}
         </p>
 
         <CallDemo
