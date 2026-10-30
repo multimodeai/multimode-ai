@@ -43,10 +43,6 @@ const services: {
         href: "/benchmarks/girih-bench",
       },
       {
-        text: "ProWasl — trusted local help, fair to the people who do it",
-        href: "https://prowasl.com",
-      },
-      {
         text: "BayanLab — halal and Muslim community data",
         href: "https://bayanlab.com",
       },
