@@ -78,12 +78,12 @@ export default async function DemoPage({
           <h2 className="text-lg font-semibold mb-3">How it works</h2>
           <p className="text-[15px] leading-relaxed text-warm-gray">
             I set it up on your existing number and tune it to how you work: what
-            you do, where you go, what to say when you&apos;re booked up. Then I
-            keep it running and fix anything that comes up. You don&apos;t touch
-            any software. Setup is a one-time $750 for our first three shops.
-            The phone service then runs on your own account, about $30 to $135
-            a month depending on calls. Ongoing support is optional, about $99 a
-            month.
+            you do, where you go, what to say when you&apos;re booked up. You
+            don&apos;t touch any software. Setup is a one-time $750 for our first
+            three businesses. The phone service then runs on your own account,
+            about $30 to $135 a month depending on calls. Ongoing support, where I
+            keep it running and fix anything that comes up, is optional, about $99
+            a month.
           </p>
         </section>
 
