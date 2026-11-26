@@ -1,7 +1,7 @@
 /* Styles for /papers/plain-gh-is-hard-to-beat only. Everything is scoped under .ghp
    so nothing leaks into the rest of the site. Colors follow the site palette
    (cream, charcoal, warm gray, sage); the four series colors are the figures' data
-   colors. The page follows the reader's light or dark setting. */
+   colors. Light only, like the rest of the site. */
 
 .ghp {
   --bg: #faf9f6;
@@ -20,23 +20,6 @@
   min-height: 100vh;
   background: var(--bg);
   color: var(--fg);
-}
-@media (prefers-color-scheme: dark) {
-  .ghp {
-    --bg: #1a1a1a;
-    --fg: #ebe8e1;
-    --muted: #a6a39b;
-    --rule: #3a3a38;
-    --box: #242422;
-    --box-rule: #4a4a46;
-    --link: #9fbcae;
-    --code-bg: #2a2a27;
-    --c-gh: #6fa3e6;
-    --c-axi: #f0975a;
-    --c-mcp: #b48ae8;
-    --c-tai: #4cc2b0;
-    --grid: #303030;
-  }
 }
 
 .ghp main { max-width: 48rem; margin: 0 auto; padding: 4rem 1.5rem; font-size: 17px; line-height: 1.65; }
