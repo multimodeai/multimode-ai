@@ -80,7 +80,10 @@ export default async function DemoPage({
             I set it up on your existing number and tune it to how you work: what
             you do, where you go, what to say when you&apos;re booked up. Then I
             keep it running and fix anything that comes up. You don&apos;t touch
-            any software. Running it starts at $99 a month after setup.
+            any software. Setup is a one-time $750 for our first three shops.
+            The phone service then runs on your own account, about $30 to $135
+            a month depending on calls. Ongoing support is optional, about $99 a
+            month.
           </p>
         </section>
 
