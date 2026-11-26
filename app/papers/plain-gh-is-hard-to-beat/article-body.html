@@ -1,0 +1,432 @@
+<header class="paper">
+<p class="readtime">Read time: about 30 minutes in full. The abstract and the boxed findings take 2.</p>
+<h1>Plain gh Is Hard to Beat: What It Costs an AI Agent to Read GitHub Through gh, gh-axi, GitHub's MCP Server and a Drop-in Replacement</h1>
+<p class="byline">Hud Wahab, Multimode AI</p>
+<p class="date">26 November 2026</p>
+<p class="status">Draft for review. Not yet peer reviewed.</p>
+</header>
+
+<section class="abstract">
+<h2>Abstract</h2>
+<p>AI coding agents read GitHub either through a command-line tool or through a tool server that speaks the Model Context Protocol. Some GitHub tools are now designed specially for agents, on the claim that they cost fewer tokens than the tools people use. We tested that claim. We compared plain <code>gh</code>, GitHub's own command-line tool; <code>gh-axi</code>, the reference GitHub tool of the AXI design principles; GitHub's MCP server; and <code>gh-tai</code>, an unreleased drop-in replacement for <code>gh</code> that we built. Agents answered two separate sets of 42 read-only questions about public repositories. Each set was written and sealed before its first use, and a script graded every answer against GitHub's own data. We ran four Claude models with two repeats each: 2,688 runs in all. The two agent-specific tools cost more than plain <code>gh</code>. <code>gh-axi</code> used 1.5 to 2.5 times plain <code>gh</code>'s input tokens and GitHub's MCP server 2.1 to 2.5 times, and neither answered more questions correctly. <code>gh-tai</code> matched plain <code>gh</code> on correct answers on every model and on tokens on three of the four; on Claude Opus 5.5 it cost 7% to 9% more on both sets. Across tools, cost followed the number of round trips between the agent and the tool far more than the size of each output. A re-run of AXI's own published benchmark found that <code>gh-axi</code> used more tokens than plain <code>gh</code> on 14 of 17 tasks. Our main finding is a negative one for tool builders: plain <code>gh</code> is already very good for agents.</p>
+</section>
+
+<section class="findings" aria-label="Key findings in plain words">
+<h2>Key findings in plain words</h2>
+<ol>
+<li>The <code>gh</code> command that GitHub already ships is cheap for AI agents. On simple questions it gets the answer in the fewest steps possible, and agents never had to look up how to use it.</li>
+<li>The two GitHub tools built specially for agents cost about twice as much as plain <code>gh</code> in our tests, and did not answer more questions correctly.</li>
+<li>Our own replacement for <code>gh</code> tied with it. It did not beat it. On one of the four models it cost a little more, on both question sets.</li>
+<li>Cost comes from going back and forth. Every extra step re-sends the whole conversation to the model, about 15,000 tokens per step here. Making each tool output shorter saves far less than avoiding one step.</li>
+<li>If you build a tool for agents, test it against the plain tool first, on questions you have never seen, graded by a script. The plain tool is the hard rival.</li>
+</ol>
+</section>
+
+<h2>1. Introduction</h2>
+
+<p>An AI agent, in this paper, is a language model running in a loop. It reads a task, runs a command, reads what the command printed, and repeats until it can answer. Developers now hand agents everyday work on GitHub: check the latest release, find who opened an issue, count the pull requests merged last year. Every one of those steps costs tokens. A token is the unit a language model reads and is billed by, roughly four characters of English text. More tokens means a higher bill and a slower answer.</p>
+
+<p>There are two common ways for an agent to reach GitHub. The first is a command-line tool, or CLI: a program run by typing a command in a terminal, such as <code>gh issue list</code>. The second is the Model Context Protocol, or MCP: a standard way to offer an agent a set of named tools, each described by a schema the model reads before it calls the tool. GitHub ships both, the <code>gh</code> CLI and an MCP server.</p>
+
+<p>In March 2026 Kun Chen published AXI, a set of ten design principles for command-line tools meant for agents, together with <code>gh-axi</code>, a GitHub tool built on them, and a 425-run benchmark [1, 2]. The AXI site states the result as "100% task success at the lowest cost" [1]. The idea is attractive: if a tool is shaped for how agents read, agents should need fewer tokens than with tools shaped for people.</p>
+
+<p>We set out to build a tool that would beat both <code>gh</code> and <code>gh-axi</code>. Before measuring, we fixed a rule for keeping it: the new tool had to beat both rivals by more than chance, on more than one model. The tool, <code>gh-tai</code>, is a drop-in replacement for <code>gh</code>. It did not meet the rule. It tied with plain <code>gh</code>. Along the way we found that the agent-specific tools, <code>gh-axi</code> and GitHub's MCP server, cost about twice what plain <code>gh</code> costs.</p>
+
+<p>This paper reports that result and the method behind it. We describe a measurement design for agent tools in which the questions are sealed before use and every answer is graded by a script. We report results on two independent question sets across four models. We report a re-run of AXI's own benchmark. And we explain, with our data and outside studies, why plain <code>gh</code> is hard to beat: the cost of an agent's work is set mainly by how many times it goes back and forth with a tool, and on most everyday questions plain <code>gh</code> already goes back and forth the minimum number of times.</p>
+
+<h2>2. Background</h2>
+
+<h3>2.1 Plain gh</h3>
+
+<p><code>gh</code> is GitHub's official command-line tool [5]. It covers issues, pull requests, releases, workflow runs, repositories and search, and it has a general <code>gh api</code> command that can call any part of GitHub's API, the interface programs use to ask GitHub for data. It can print JSON with <code>--json</code> and filter it with <code>--jq</code>. It was written for people, but it is old and widely used, so current models have seen a great deal of it in their training data. One known weakness matters for agents: list commands stop at a default row limit (30 rows for most lists) without saying the list was cut. An agent that counts the rows it got can report a page size as a total. We saw this in our re-run of AXI's benchmark (Section 4.6).</p>
+
+<h3>2.2 AXI and gh-axi</h3>
+
+<p>AXI ("Agent eXperience Interface") is Kun Chen's set of ten principles for agent-facing command-line tools, released under the MIT licence with a reference GitHub tool, <code>gh-axi</code> [1, 2, 3]. According to the AXI study, <code>gh-axi</code> uses the same subcommands as <code>gh</code> but prints a compact structured format, adds pre-computed summaries such as counts and check results, suggests next commands, and reveals long content step by step [2].</p>
+
+<p>The published GitHub study, dated 21 March 2026, ran five conditions on 17 tasks against one repository, with five repeats each: 425 runs [2]. The agent and the grader were both Claude Sonnet 4.6; the grader was a language model acting as a judge. It reported <code>gh-axi</code> at 100% success and $0.050 per task, plain <code>gh</code> at 86% and $0.054, and three MCP setups at 82% to 87% and $0.101 to $0.148 [2]. It reported 46K average input tokens for <code>gh-axi</code> against 47K for plain <code>gh</code>, and 137K to 176K for the MCP setups [2]. A re-run of the <code>gh-axi</code> condition by an outside contributor in July 2026, posted as an issue on the AXI repository, scored 71 of 85 (83.5%), partly because three grading hints had gone stale as the repository changed [4].</p>
+
+<p>We used <code>gh-axi</code> version 0.1.43, as shipped. We did not tell any agent to read any tool's help.</p>
+
+<h3>2.3 GitHub's MCP server</h3>
+
+<p>GitHub runs a remote MCP server [6]. At the time of our runs its default tool sets offered 49 tools. None of them reads GitHub Actions workflow runs. Claude Code, the agent program we used, does not load every MCP tool description at the start by default. It loads them through a built-in search tool, ToolSearch: the agent searches for the tools it needs, and only their descriptions enter the conversation. The AXI study ran the MCP server both ways [2]; we used the default, ToolSearch.</p>
+
+<h3>2.4 gh-tai</h3>
+
+<p><code>gh-tai</code> is a tool we built and have not released. It accepts <code>gh</code>'s own commands and flags, so an agent types exactly what it would type after <code>gh</code>. For a set of common reads (listing and viewing issues, pull requests, workflow runs and releases; pull request checks; labels; repository details; search; and read-only <code>api</code> calls) it answers itself, calling GitHub directly. Its lists state the true total from GitHub, and it can count and page on the agent's behalf. Any other read is handed to <code>gh</code> unchanged, with one line on the error stream saying so. It refuses every write. It builds on AXI's MIT-licensed toolkit.</p>
+
+<p>Between our two question sets we made three small fixes to <code>gh-tai</code>, each aimed at a cost seen on the first set: a plain one-line "not found" message with no suggestion to try another command; answering <code>gh</code>'s date flags on searches itself instead of handing them to <code>gh</code>; and accepting every JSON field <code>gh</code> accepts.</p>
+
+<h2>3. Method</h2>
+
+<h3>3.1 Questions</h3>
+
+<p>We used two question sets of 42 questions each. Each set has seven questions of each of six kinds: simple lookups, single fields, questions about a related object (such as a milestone or a branch), counts and rankings, "for each of the last N" questions, and questions whose answer is an error or an empty result (such as an issue that does not exist). Every question is a read. Each set covers seven public repositories that no earlier test of ours had used. Neither set uses AXI's benchmark repository, and the second set avoids the first set's repositories.</p>
+
+<p>Both sets are held out. A held-out set is a set of test questions kept away from the people building the tool, so the tool cannot be tuned to them. Each set was written by a separate agent session that did not read <code>gh-tai</code>'s code, help text or past results, and did not run it. Each set was then sealed: its files were fingerprinted with a cryptographic hash and made read-only, and the hash was checked before the first run, so any later edit would show. Each set was used once. The second set was written and sealed before the fixes in Section 2.4 were made.</p>
+
+<p>Every question ends with the same instruction: give the answer on a final line that starts with <code>ANSWER:</code>. Questions about things that may not exist offer <code>not found</code> as an answer. An agent that cannot answer is told to write <code>ANSWER: unknown</code>.</p>
+
+<p>A script, never a language model, grades each answer against GitHub's own data, read through GitHub's API (the interface programs use to ask GitHub for data). Because live repositories change, the script reads the true answer twice: just before the agent starts, and again at grading. An answer passes if it matches either reading, and for counts any value between the two readings passes. Each run gets one of three grades: correct, confidently wrong (an answer that does not match), or no answer (including <code>unknown</code>).</p>
+
+<h3>3.2 Tools and instructions</h3>
+
+<p>Each run gave the agent one way to reach GitHub, which we call an arm. The three command-line arms received the same instruction text, with only the tool's name changed:</p>
+
+<pre><code># Tools
+
+You have `&lt;TOOL&gt;` installed. Use `&lt;TOOL&gt;` for all GitHub operations; do not use any other
+GitHub tool or call the GitHub API another way.
+
+Examples:
+- `&lt;TOOL&gt; issue list --repo owner/repo`
+- `&lt;TOOL&gt; pr view 123 --repo owner/repo`
+- `&lt;TOOL&gt; release list --repo owner/repo`</code></pre>
+
+<p>The MCP arm received the same first lines, naming "the <code>github</code> MCP server", and no examples, because the examples are shell commands. No instruction mentions help. In the MCP arm, <code>gh</code>, <code>gh-axi</code> and <code>gh-tai</code> were removed from the shell's search path, so any shell route to GitHub would fail and be recorded as a rule break. Every <code>gh-tai</code> call passed through a small logging wrapper that recorded which commands <code>gh-tai</code> answered itself and which it handed to <code>gh</code>.</p>
+
+<h3>3.3 Agent program and models</h3>
+
+<p>All runs used Claude Code 2.1.331 in non-interactive mode, with the version pinned and checked on every run. We switched off everything that could leak in from the machine: user settings, memory, slash commands, saved sessions and any MCP server other than the arm's own. Each run started in a fresh, empty workspace with the instruction text in it. The agent had Claude Code's standard built-in tools (shell, file read and edit, search, sub-tasks and web access); the MCP arm also had ToolSearch. A run was stopped after five minutes. We used four models, pinned by exact ID: <code>claude-sonnet-5-5</code>, <code>claude-haiku-5-5</code>, <code>claude-opus-5-5</code> and <code>claude-fable-5-2</code>. Other versions: <code>gh</code> 2.86.0 and <code>gh-axi</code> 0.1.43. Every run logged in with a subscription account rather than a pay-per-use key.</p>
+
+<h3>3.4 Run order</h3>
+
+<p>Each question ran twice per arm and model, in two blocks. Sonnet and Haiku ran together in one batch; Opus and Fable each ran in a batch of their own. Within a block the questions were shuffled, and each question's cells (every arm on every model in the batch) ran back to back in a shuffled order, so changes in GitHub's data or speed during a batch fell on all arms alike. Batches ran one after another, not in parallel, because parallel runs would raise GitHub search traffic and hit the search-heavy arms with rate limits. Each set took 1,344 runs (42 questions, four arms, four models, two repeats). The first set ran on 25 November 2026 and the second on 26 November 2026.</p>
+
+<h3>3.5 Measures</h3>
+
+<p>Our main cost measure is total input tokens per run. Each time the agent takes a step, the whole conversation so far is sent to the model again, and all of it counts as input. Part of that input is usually cached: the provider has seen it recently and can reuse it, and bills it at a discount. We count cached input in full, at the same weight as uncached input, because how much of a run is cached depends on timing and on what else is running, not on the tool. This makes our token counts larger than a cache-discounted bill would be. Every arm is measured the same way.</p>
+
+<p>A round trip is one cycle in which the model reads everything so far, decides, and runs one or more commands. The final answer counts as the last round. A question answered with a single command therefore takes two round trips. We also counted runs in which the agent read a tool's help (any command containing <code>--help</code>, <code>help</code> or <code>-h</code>, each checked by hand), and confidently wrong answers separately from "no answer", because a confident wrong answer does more harm.</p>
+
+<h3>3.6 Statistics</h3>
+
+<p>For success rates we report Wilson 95% ranges [14]. A Wilson range is an interval around a measured success rate that, with this many runs, very likely contains the true rate. It behaves sensibly near 0% and 100%, where simpler formulas give nonsense.</p>
+
+<p>To compare two arms we used a paired sign test [15]. For each question we took the mean over its two repeats for each arm and asked which arm was cheaper. Gaps within 2% counted as ties; this band was fixed before these runs and has been used in all our earlier rounds. The sign test ignores ties and asks how often a split at least as lopsided as the one we saw would happen if the two arms were really equal. That probability is the p value. A small p (below 0.05 by convention) means the split is unlikely to be luck. A large p means the data cannot tell the arms apart; it does not prove they are equal. We tested correct answers the same way, counting only questions where one arm passed more often than the other.</p>
+
+<p>Our keep rule, fixed before the runs, was that <code>gh-tai</code> must beat both plain <code>gh</code> and <code>gh-axi</code> by more than chance, on more than one model.</p>
+
+<h3>3.7 Re-running AXI's benchmark</h3>
+
+<p>Separately, on 23 November 2026, we re-ran AXI's published GitHub benchmark with its own 17 tasks, condition texts, MCP wiring and language-model judge, unchanged. We used AXI's later grading hints, which the AXI project itself updated so that answers are graded by process rather than by values from March. Agent and judge were Claude Sonnet 4.6, as in the original study, under Claude Code 2.1.330 with the same leak controls as above. Our usage allowance covered one full round of all 17 tasks and a second round of 9: 156 runs, one or two per task and arm, instead of the planned five. A second run the same day, on the same 17 tasks with five repeats, compared plain <code>gh</code> and <code>gh-axi</code> again. Both runs also included an earlier version of our own tool; it differs from <code>gh-tai</code>, so we leave its numbers out.</p>
+
+<h2>4. Results</h2>
+
+<p>All 2,688 runs on the two sealed sets finished. There were no stalls, crashes or retries. On each set GitHub briefly failed or refused some of the grader's own lookups; Section 6 describes how we handled it. Every run used the pinned agent program and the requested model.</p>
+
+<h3>4.1 The second set: correct answers and tokens</h3>
+
+<p>The second set is our headline result, because it ran after the fixes on questions nobody building <code>gh-tai</code> had seen. Table 1 gives correct answers and Table 2 gives tokens.</p>
+
+<p class="tcap"><b>Table 1.</b> Correct answers on the second set, out of 84 runs per cell (42 questions, two repeats), with Wilson 95% ranges. In Tables 1, 2, 4 and 5, bold marks the best value in each row: the most correct answers, or the fewest tokens or round trips.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model</th><th>plain gh</th><th>gh-axi</th><th>GitHub MCP</th><th>gh-tai</th></tr></thead>
+<tbody>
+<tr><td>Sonnet 5.5</td><td>77 (84-96%)</td><td>74 (79-93%)</td><td>67 (70-87%)</td><td><strong>78</strong> (85-97%)</td></tr>
+<tr><td>Haiku 5.5</td><td><strong>83</strong> (94-100%)</td><td>78 (85-97%)</td><td>71 (75-91%)</td><td>80 (88-98%)</td></tr>
+<tr><td>Opus 5.5</td><td><strong>84</strong> (96-100%)</td><td><strong>84</strong> (96-100%)</td><td>79 (87-97%)</td><td><strong>84</strong> (96-100%)</td></tr>
+<tr><td>Fable 5.2</td><td><strong>84</strong> (96-100%)</td><td>83 (94-100%)</td><td>79 (87-97%)</td><td><strong>84</strong> (96-100%)</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">Question by question, no difference in correct answers between <code>gh-tai</code> and any rival reached p &lt; 0.05 on any model. The lowest p was 0.11 (Sonnet, <code>gh-tai</code> against MCP).</p>
+
+<p class="tcap"><b>Table 2.</b> Mean total input tokens per run on the second set (cached and uncached counted together), and each tool's cost as a multiple of plain gh.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model</th><th>plain gh</th><th>gh-axi</th><th>GitHub MCP</th><th>gh-tai</th></tr></thead>
+<tbody>
+<tr><td>Sonnet 5.5</td><td><strong>24.6K</strong></td><td>42.3K (1.72x)</td><td>57.1K (2.32x)</td><td>25.5K (1.04x)</td></tr>
+<tr><td>Haiku 5.5</td><td><strong>31.7K</strong></td><td>68.4K (2.16x)</td><td>79.1K (2.50x)</td><td>33.1K (1.04x)</td></tr>
+<tr><td>Opus 5.5</td><td><strong>26.4K</strong></td><td>50.4K (1.91x)</td><td>57.6K (2.18x)</td><td>28.8K (1.09x)</td></tr>
+<tr><td>Fable 5.2</td><td><strong>26.8K</strong></td><td>39.9K (1.49x)</td><td>65.3K (2.44x)</td><td>27.0K (1.01x)</td></tr>
+</tbody>
+</table>
+</div>
+
+<figure>
+<svg viewBox="0 0 640 330" role="img" aria-labelledby="fig1t">
+<title id="fig1t">Mean input tokens per run by model and tool, second set</title>
+<!-- grid: x scale 0 to 80K mapped to 120..620 px (6.25 px per K) -->
+<line class="svg-grid" x1="120" y1="20" x2="120" y2="282"/>
+<line class="svg-grid" x1="182.5" y1="20" x2="182.5" y2="282"/>
+<line class="svg-grid" x1="245" y1="20" x2="245" y2="282"/>
+<line class="svg-grid" x1="307.5" y1="20" x2="307.5" y2="282"/>
+<line class="svg-grid" x1="370" y1="20" x2="370" y2="282"/>
+<line class="svg-grid" x1="432.5" y1="20" x2="432.5" y2="282"/>
+<line class="svg-grid" x1="495" y1="20" x2="495" y2="282"/>
+<line class="svg-grid" x1="557.5" y1="20" x2="557.5" y2="282"/>
+<line class="svg-grid" x1="620" y1="20" x2="620" y2="282"/>
+<text class="svg-muted" x="120" y="298" font-size="12" text-anchor="middle">0</text>
+<text class="svg-muted" x="245" y="298" font-size="12" text-anchor="middle">20K</text>
+<text class="svg-muted" x="370" y="298" font-size="12" text-anchor="middle">40K</text>
+<text class="svg-muted" x="495" y="298" font-size="12" text-anchor="middle">60K</text>
+<text class="svg-muted" x="620" y="298" font-size="12" text-anchor="middle">80K</text>
+<text class="svg-muted" x="370" y="318" font-size="12" text-anchor="middle">mean total input tokens per run</text>
+<!-- Sonnet: rows at y=24,36,48,60 -->
+<text class="svg-text" x="110" y="47" font-size="13" text-anchor="end">Sonnet 5.5</text>
+<rect class="f-gh" x="120" y="24" width="153.75" height="10"/>
+<rect class="f-axi" x="120" y="36" width="264.38" height="10"/>
+<rect class="f-mcp" x="120" y="48" width="356.88" height="10"/>
+<rect class="f-tai" x="120" y="60" width="159.38" height="10"/>
+<!-- Haiku: base 90 -->
+<text class="svg-text" x="110" y="113" font-size="13" text-anchor="end">Haiku 5.5</text>
+<rect class="f-gh" x="120" y="90" width="198.13" height="10"/>
+<rect class="f-axi" x="120" y="102" width="427.5" height="10"/>
+<rect class="f-mcp" x="120" y="114" width="494.38" height="10"/>
+<rect class="f-tai" x="120" y="126" width="206.88" height="10"/>
+<!-- Opus: base 156 -->
+<text class="svg-text" x="110" y="179" font-size="13" text-anchor="end">Opus 5.5</text>
+<rect class="f-gh" x="120" y="156" width="165" height="10"/>
+<rect class="f-axi" x="120" y="168" width="315" height="10"/>
+<rect class="f-mcp" x="120" y="180" width="360" height="10"/>
+<rect class="f-tai" x="120" y="192" width="180" height="10"/>
+<!-- Fable: base 222 -->
+<text class="svg-text" x="110" y="245" font-size="13" text-anchor="end">Fable 5.2</text>
+<rect class="f-gh" x="120" y="222" width="167.5" height="10"/>
+<rect class="f-axi" x="120" y="234" width="249.38" height="10"/>
+<rect class="f-mcp" x="120" y="246" width="408.13" height="10"/>
+<rect class="f-tai" x="120" y="258" width="168.75" height="10"/>
+<line class="svg-axis" x1="120" y1="20" x2="120" y2="282"/>
+<!-- legend -->
+<rect class="f-gh" x="530" y="146" width="12" height="10"/><text class="svg-text" x="548" y="155" font-size="12">plain gh</text>
+<rect class="f-axi" x="530" y="163" width="12" height="10"/><text class="svg-text" x="548" y="172" font-size="12">gh-axi</text>
+<rect class="f-mcp" x="530" y="180" width="12" height="10"/><text class="svg-text" x="548" y="189" font-size="12">GitHub MCP</text>
+<rect class="f-tai" x="530" y="197" width="12" height="10"/><text class="svg-text" x="548" y="206" font-size="12">gh-tai</text>
+</svg>
+<figcaption><b>Figure 1.</b> Mean total input tokens per run on the second set, by model and tool (bars in the legend's order within each model). The same data as Table 2. Plain <code>gh</code> and <code>gh-tai</code> sit together at the short end on every model; <code>gh-axi</code> and the MCP server are roughly twice as long.</figcaption>
+</figure>
+
+<p>On every model, plain <code>gh</code> and <code>gh-tai</code> were the two cheapest arms and were within 1% to 9% of each other. <code>gh-axi</code> used 1.49 to 2.16 times plain <code>gh</code>'s tokens and the MCP server 2.18 to 2.50 times. Neither answered more questions correctly than plain <code>gh</code> on any model (Table 1). Question by question, <code>gh-tai</code> was cheaper than <code>gh-axi</code> on 25 to 31 of the 42 questions, depending on the model, and cheaper than the MCP server on 39 to 42 (all p &lt; 0.0001). We did not run the paired test between plain <code>gh</code> and the other two tools on these sets, but the means in Table 2 put plain <code>gh</code> where <code>gh-tai</code> is.</p>
+
+<h3>4.2 gh-tai against plain gh, question by question</h3>
+
+<p>Table 3 shows the paired comparison that decides our keep rule, on both sets.</p>
+
+<p class="tcap"><b>Table 3.</b> gh-tai against plain gh on tokens, question by question. "Cheaper" and "dearer" count questions where gh-tai's mean was more than 2% below or above plain gh's; the rest are ties. Ratio is gh-tai's mean tokens over plain gh's. Bold marks a split unlikely to be chance (p below 0.05) and the side it favours.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model</th><th class="l">Set</th><th>cheaper</th><th>dearer</th><th>tie</th><th>p</th><th>ratio</th></tr></thead>
+<tbody>
+<tr><td>Sonnet 5.5</td><td class="l">second</td><td>6</td><td>7</td><td>29</td><td>1.00</td><td>1.04</td></tr>
+<tr><td></td><td class="l">first</td><td>9</td><td>6</td><td>27</td><td>0.61</td><td>0.99</td></tr>
+<tr><td>Haiku 5.5</td><td class="l">second</td><td>8</td><td>12</td><td>22</td><td>0.50</td><td>1.05</td></tr>
+<tr><td></td><td class="l">first</td><td>6</td><td>13</td><td>23</td><td>0.17</td><td>1.04</td></tr>
+<tr><td>Opus 5.5</td><td class="l">second</td><td>5</td><td>14</td><td>23</td><td>0.06</td><td>1.09</td></tr>
+<tr><td></td><td class="l">first</td><td>2</td><td><strong>11</strong></td><td>29</td><td><strong>0.02</strong></td><td>1.07</td></tr>
+<tr><td>Fable 5.2</td><td class="l">second</td><td>3</td><td>3</td><td>36</td><td>1.00</td><td>1.01</td></tr>
+<tr><td></td><td class="l">first</td><td>1</td><td>4</td><td>37</td><td>0.38</td><td>1.04</td></tr>
+<tr><td>All four, pooled</td><td class="l">second</td><td>22</td><td>36</td><td>110</td><td>0.09</td><td></td></tr>
+<tr><td></td><td class="l">first</td><td>18</td><td><strong>34</strong></td><td>116</td><td><strong>0.04</strong></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">The pooled rows treat each model's answer to a question as its own pair (168 pairs). Read it as a summary, not as a fifth test.</p>
+
+<p>On Sonnet, Haiku and Fable the two tools cannot be told apart. On Opus, <code>gh-tai</code> cost more on both sets: 7% more on the first (p = 0.02) and 9% more on the second (p = 0.06). Taken alone, the second result could be chance. Taken together with the first, we read it as a small real loss on Opus. Pooled over the four models, <code>gh-tai</code> leans slightly dearer on both sets. On no model and on neither set is <code>gh-tai</code> cheaper than plain <code>gh</code> by more than chance. The keep rule is not met.</p>
+
+<p>Most questions were ties for a simple reason. On the 14 lookup and single-field questions, all four models took exactly two round trips with both tools, in 56 of 56 question-model pairs: one command, then the answer. There is no step left to save. On the other four kinds, <code>gh-tai</code> saved half a round trip or more on 22 question-model pairs and cost that much on 27. No kind of question showed a reliable saving.</p>
+
+<h3>4.3 The first set</h3>
+
+<p>The first set ran before the fixes, on different repositories. Table 4 shows that it tells the same story.</p>
+
+<p class="tcap"><b>Table 4.</b> First set: correct answers out of 84 and mean total input tokens per run.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model</th><th>plain gh</th><th>gh-axi</th><th>GitHub MCP</th><th>gh-tai</th></tr></thead>
+<tbody>
+<tr><td>Sonnet 5.5</td><td>74, 25.9K</td><td><strong>75</strong>, 48.4K</td><td>62, 57.9K</td><td><strong>75</strong>, <strong>25.8K</strong></td></tr>
+<tr><td>Haiku 5.5</td><td>81, <strong>30.9K</strong></td><td>74, 78.3K</td><td>68, 66.7K</td><td><strong>82</strong>, 32.0K</td></tr>
+<tr><td>Opus 5.5</td><td><strong>84</strong>, <strong>26.7K</strong></td><td>83, 51.8K</td><td>74, 57.0K</td><td>81, 28.6K</td></tr>
+<tr><td>Fable 5.2</td><td><strong>84</strong>, <strong>25.6K</strong></td><td><strong>84</strong>, 40.9K</td><td>77, 60.5K</td><td><strong>84</strong>, 26.6K</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>On the first set <code>gh-axi</code> used 1.60 to 2.53 times plain <code>gh</code>'s tokens and the MCP server 2.13 to 2.36 times. Across both sets, then, <code>gh-axi</code> cost 1.5 to 2.5 times plain <code>gh</code> and the MCP server 2.1 to 2.5 times. On the first set <code>gh-tai</code> had 3 fewer correct answers than plain <code>gh</code> on Opus. On two of those questions GitHub itself gives two different numbers depending on where one looks (a milestone's closed-issue counter says 51 while its issue listing returns 50), and <code>gh-tai</code> printed exactly what <code>gh</code> printed.</p>
+
+<p>The fixes did what they were meant to do. On the first set, <code>gh-tai</code>'s "not found" message suggested another command, and Opus and Fable followed the suggestion, spending an extra round trip that plain <code>gh</code>'s blunter error avoided. On Fable the "repository does not exist" question cost <code>gh-tai</code> 52% more than plain <code>gh</code>. On the second set, Fable's question of the same kind cost <code>gh-tai</code> 34% less (24.6K against 37.3K tokens). Those questions were a small share of the set, so the totals barely moved.</p>
+
+<h3>4.4 Round trips and help</h3>
+
+<p class="tcap"><b>Table 5.</b> Mean round trips per run, and runs (of 84) in which the agent read the tool's help. Second set first, first set in brackets.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model</th><th>plain gh</th><th>gh-axi</th><th>GitHub MCP</th><th>gh-tai</th></tr></thead>
+<tbody>
+<tr><td>Sonnet 5.5</td><td><strong>2.25</strong> (2.37); help 0 (0)</td><td>3.55 (3.99); help 36 (33)</td><td>3.96 (3.87)</td><td>2.31 (2.33); help 2 (0)</td></tr>
+<tr><td>Haiku 5.5</td><td><strong>2.62</strong> (2.56); help 0 (0)</td><td>4.83 (5.37); help 32 (44)</td><td>4.42 (3.92)</td><td>2.69 (2.60); help 1 (1)</td></tr>
+<tr><td>Opus 5.5</td><td><strong>2.37</strong> (2.40); help 0 (0)</td><td>4.07 (4.29); help 66 (72)</td><td>3.94 (3.90)</td><td>2.54 (2.56); help 8 (1)</td></tr>
+<tr><td>Fable 5.2</td><td><strong>2.15</strong> (2.07); help 0 (0)</td><td>3.02 (3.12); help 29 (34)</td><td>3.71 (3.76)</td><td>2.17 (2.14); help 0 (0)</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">The MCP arm has no help command; its nearest equivalent, ToolSearch, was called about once per run.</p>
+
+<p>Agents never read plain <code>gh</code>'s help, in any of its 672 runs across both sets. They read <code>gh-axi</code>'s help in 29 to 72 of 84 runs per model, even though nothing told them to. They rarely read <code>gh-tai</code>'s (13 of 672 runs), because it takes the commands they already know. The round-trip counts follow the token counts closely: on the second set the cheap arms averaged 2.1 to 2.7 round trips and the dear arms 3.0 to 4.8. Section 5 returns to this.</p>
+
+<p><code>gh-tai</code> answered most commands itself. It handed between 1 and 10 runs in 84 per model to <code>gh</code> on the second set, mostly for commands it does not answer, and those runs cost more on average. Its own extra flags for counting and date ranges appeared in 6 of 481 <code>gh-tai</code> commands: agents type <code>gh</code>'s language.</p>
+
+<h3>4.5 Failures</h3>
+
+<p>Most misses were shared by every command-line tool. On the second set, all of plain <code>gh</code>'s 7 Sonnet misses and all of <code>gh-tai</code>'s 5 Sonnet "no answer" results were questions about something that does not exist, where the agent wrote <code>unknown</code> although <code>not found</code> was offered. Haiku showed the same habit. It affects every tool about equally.</p>
+
+<p>The MCP server has no tools for workflow runs, and it gave no answer to the GitHub Actions question in any of its 16 runs of that question across both sets. It also missed a release-asset question in every Opus and Fable run of the second set. Agents in the MCP arm also hit GitHub's rate limit in 8 runs of the second set; no plain <code>gh</code> or <code>gh-tai</code> run did. Confidently wrong answers were rare for plain <code>gh</code> (0 on the second set, 2 on the first) and most common for the MCP server (8 on the second set, 18 on the first).</p>
+
+<p>The second set exposed two small gaps in <code>gh-tai</code> as a drop-in. It reads long lists through GitHub search, which stops at 1,000 results, so it refused a request for 5,000 merged pull requests that plain <code>gh</code> returned in full (2,418 rows); this cost extra steps in 4 of 336 <code>gh-tai</code> runs. It also prints a few lines that <code>gh</code> does not, which broke a <code>2&gt;&amp;1 | jq</code> pipe in 2 runs. Both touched 6 of 336 runs and would not turn the tie into a win if fixed.</p>
+
+<h3>4.6 AXI's benchmark, re-run</h3>
+
+<p>Table 6 sets AXI's published numbers beside our re-run on the same tasks.</p>
+
+<p class="tcap"><b>Table 6.</b> AXI's GitHub benchmark: published (March 2026, five repeats) and our re-run (November 2026, one or two repeats per task). Success, mean total input tokens per run, and mean agent turns as Claude Code counts them. Agent and judge: Claude Sonnet 4.6. Bold marks the best value in each column.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Tool</th><th>Published: solved</th><th>tokens</th><th>Re-run: solved</th><th>95% range</th><th>tokens</th><th>turns</th></tr></thead>
+<tbody>
+<tr><td>plain gh</td><td>73/85</td><td>47.1K</td><td>22/26</td><td>66-94%</td><td><strong>43.4K</strong></td><td><strong>3.65</strong></td></tr>
+<tr><td>gh-axi</td><td><strong>85/85</strong></td><td><strong>46.5K</strong></td><td><strong>25/26</strong></td><td>81-99%</td><td>55.2K</td><td>4.54</td></tr>
+<tr><td>MCP, all tools loaded</td><td>74/85</td><td>175.8K</td><td>22/26</td><td>66-94%</td><td>86.7K</td><td>3.88</td></tr>
+<tr><td>MCP, ToolSearch</td><td>70/85</td><td>153.6K</td><td>19/25</td><td>57-89%</td><td>65.5K</td><td>4.58</td></tr>
+<tr><td>MCP, code mode</td><td>71/85</td><td>137.4K</td><td>20/26</td><td>58-89%</td><td>109.8K</td><td>4.69</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">Published values are computed from AXI's published per-run results file; AXI's study page rounds them to 47K and 46K for plain gh and gh-axi [2]. One MCP ToolSearch run is excluded because the judge returned no verdict.</p>
+
+<p>Paired by task, <code>gh-axi</code> used more tokens than plain <code>gh</code> on 14 of the 17 tasks and fewer on 3 (p = 0.013). The study's claim was the opposite [2]. The same-day run with five repeats agreed: on AXI's tasks, plain <code>gh</code> averaged 44.7K tokens and <code>gh-axi</code> 54.1K, over 85 runs each. <code>gh-axi</code> solved 25 of 26 runs against plain <code>gh</code>'s 22 (p = 0.35). Of AXI's 12 headline claims, 4 reproduced, 4 reproduced in part and 4 did not, and none failed only because GitHub's data had changed.</p>
+
+<p>Two things changed between March and November that explain much of the gap. The published March runs had a browser-automation MCP server with 29 tools, and two other connectors, loaded in every arm: a leak from the machine the study ran on. In the MCP arm that loaded every tool up front, all 29 browser tool descriptions sat in the context of every request, which roughly doubled its token count. Our runs switched these off, which is part of why our MCP numbers are about half of March's. And the agent program moved from Claude Code 2.1.77 to 2.1.330. Today's agent uses plain <code>gh</code>'s <code>--json</code> and <code>--limit</code> flags well, and the March advantage of <code>gh-axi</code> over plain <code>gh</code> is gone.</p>
+
+<p>Plain <code>gh</code> still has one real weakness here. It failed every run of two counting tasks (how many labels a repository has, and how many issues are open), mostly by reporting a page of 100 or 30 rows as the total. <code>gh-axi</code> prints a total, and solved those tasks more often. This is the case AXI's principles were written for, and it is real. It did not show up as a cost or correctness gap on our sealed sets, where plain <code>gh</code> answered the count questions well.</p>
+
+<h2>5. Why plain gh is hard to beat: round trips cost more than characters</h2>
+
+<p>Every time an agent takes a step, the model re-reads the whole conversation: the system prompt, the tool descriptions, the task, and every command and output so far. In an earlier run with an earlier version of the same agent program, the first request alone carried a median of about 14,800 tokens of system prompt and tool descriptions before any work began. Each later step re-sends all of that plus everything since. The number of steps therefore sets the cost far more than the length of any one output.</p>
+
+<p>Our data show this directly. Figure 2 plots each arm's mean round trips against its mean tokens, for every model on both sets. For the three command-line tools, a straight line through those 24 averages fits closely:</p>
+
+<p class="eq">tokens per run &asymp; 15,200 &times; round trips &minus; 8,500 &nbsp;&nbsp;(R&sup2; = 0.97)</p>
+
+<p>Each extra round trip went with about 15,200 more input tokens. An earlier fit of ours, over 465 individual runs of a similar benchmark with Claude Sonnet 4.6, found about 17,800 tokens per round trip and about 930 tokens per 1,000 characters of tool output (output is re-read on every later step; Section 6 notes how that run differs). By that fit, avoiding one round trip is worth as much as cutting about 19,000 characters of output. In that run, the median run of our earlier tool printed only about 1,400 characters of tool output in all. A tool that halves its output saves little; a tool that saves one step saves a lot.</p>
+
+<figure>
+<svg viewBox="0 0 640 380" role="img" aria-labelledby="fig2t">
+<title id="fig2t">Mean round trips against mean input tokens per run, all models, both sets</title>
+<!-- x: 2.0..5.5 round trips -> 80..610 px (151.43 px per round trip); y: 20K..80K -> 330..30 px (5 px per K) -->
+<line class="svg-grid" x1="80" y1="330" x2="610" y2="330"/>
+<line class="svg-grid" x1="80" y1="255" x2="610" y2="255"/>
+<line class="svg-grid" x1="80" y1="180" x2="610" y2="180"/>
+<line class="svg-grid" x1="80" y1="105" x2="610" y2="105"/>
+<line class="svg-grid" x1="80" y1="30" x2="610" y2="30"/>
+<line class="svg-grid" x1="80" y1="30" x2="80" y2="330"/>
+<line class="svg-grid" x1="231.4" y1="30" x2="231.4" y2="330"/>
+<line class="svg-grid" x1="382.9" y1="30" x2="382.9" y2="330"/>
+<line class="svg-grid" x1="534.3" y1="30" x2="534.3" y2="330"/>
+<text class="svg-muted" x="72" y="334" font-size="12" text-anchor="end">20K</text>
+<text class="svg-muted" x="72" y="259" font-size="12" text-anchor="end">35K</text>
+<text class="svg-muted" x="72" y="184" font-size="12" text-anchor="end">50K</text>
+<text class="svg-muted" x="72" y="109" font-size="12" text-anchor="end">65K</text>
+<text class="svg-muted" x="72" y="34" font-size="12" text-anchor="end">80K</text>
+<text class="svg-muted" x="80" y="350" font-size="12" text-anchor="middle">2</text>
+<text class="svg-muted" x="231.4" y="350" font-size="12" text-anchor="middle">3</text>
+<text class="svg-muted" x="382.9" y="350" font-size="12" text-anchor="middle">4</text>
+<text class="svg-muted" x="534.3" y="350" font-size="12" text-anchor="middle">5</text>
+<text class="svg-muted" x="345" y="372" font-size="12" text-anchor="middle">mean round trips per run</text>
+<text class="svg-muted" x="16" y="180" font-size="12" text-anchor="middle" transform="rotate(-90 16 180)">mean input tokens per run</text>
+<!-- fit line for the command-line arms: tokens(K) = 15.22 x round trips - 8.52, drawn from 2.0 to 5.4 round trips -->
+<line class="fitline" x1="80" y1="320.4" x2="594.9" y2="61.7"/>
+<!-- plain gh: second set Sonnet, Haiku, Opus, Fable, then first set in the same order -->
+<g class="f-gh">
+<circle cx="117.9" cy="307.0" r="5"/><circle cx="173.9" cy="271.5" r="5"/><circle cx="136.0" cy="298.0" r="5"/><circle cx="102.7" cy="296.0" r="5"/>
+<circle cx="136.0" cy="300.5" r="5"/><circle cx="164.8" cy="275.5" r="5"/><circle cx="140.6" cy="296.5" r="5"/><circle cx="90.6" cy="302.0" r="5"/>
+</g>
+<!-- gh-tai -->
+<g class="f-tai">
+<rect x="122.4" y="298.0" width="9" height="9"/><rect x="180.0" y="260.0" width="9" height="9"/><rect x="157.3" y="281.5" width="9" height="9"/><rect x="101.2" y="290.5" width="9" height="9"/>
+<rect x="125.5" y="296.5" width="9" height="9"/><rect x="166.4" y="265.5" width="9" height="9"/><rect x="160.3" y="282.5" width="9" height="9"/><rect x="96.7" y="292.5" width="9" height="9"/>
+</g>
+<!-- gh-axi -->
+<g class="f-axi">
+<path d="M314.7 212.5 l6 10.4 h-12 z"/><path d="M508.5 82.0 l6 10.4 h-12 z"/><path d="M393.5 172.0 l6 10.4 h-12 z"/><path d="M234.5 224.5 l6 10.4 h-12 z"/>
+<path d="M381.3 182.0 l6 10.4 h-12 z"/><path d="M590.3 32.5 l6 10.4 h-12 z"/><path d="M426.8 165.0 l6 10.4 h-12 z"/><path d="M249.6 219.5 l6 10.4 h-12 z"/>
+</g>
+<!-- GitHub MCP, hollow -->
+<g fill="none" stroke-width="2" class="s-mcp">
+<circle cx="376.8" cy="144.5" r="5"/><circle cx="446.5" cy="34.5" r="5"/><circle cx="373.8" cy="142.0" r="5"/><circle cx="338.9" cy="103.5" r="5"/>
+<circle cx="363.2" cy="140.5" r="5"/><circle cx="370.7" cy="96.5" r="5"/><circle cx="367.7" cy="145.0" r="5"/><circle cx="346.5" cy="127.5" r="5"/>
+</g>
+<!-- legend -->
+<circle class="f-gh" cx="436" cy="226" r="5"/><text class="svg-text" x="448" y="230" font-size="12">plain gh</text>
+<rect class="f-tai" x="431.5" y="238.5" width="9" height="9"/><text class="svg-text" x="448" y="247" font-size="12">gh-tai</text>
+<path class="f-axi" d="M436 255 l6 10.4 h-12 z"/><text class="svg-text" x="448" y="264" font-size="12">gh-axi</text>
+<circle class="s-mcp" cx="436" cy="277" r="5" fill="none" stroke-width="2"/><text class="svg-text" x="448" y="281" font-size="12">GitHub MCP</text>
+<line class="fitline" x1="424" y1="296" x2="448" y2="296"/><text class="svg-text" x="454" y="300" font-size="12">line through command-line tools</text>
+</svg>
+<figcaption><b>Figure 2.</b> Each point is one tool on one model on one question set (tokens from Tables 2 and 4, round trips from Table 5): its mean round trips per run against its mean total input tokens per run. For the three command-line tools the points fall close to one line (dashed), about 15,200 tokens per round trip. The MCP points (hollow) sit above the line because the agent also loads tool descriptions through ToolSearch. This is a fit across averages, so it shows association, not cause.</figcaption>
+</figure>
+
+<p>Seen this way, the results make sense. On the 14 simplest questions, plain <code>gh</code> needs exactly two round trips, the minimum: one command and then the answer. No tool can do better. On harder questions plain <code>gh</code> still averages under three round trips, because the agent already knows its commands and flags from training and composes them in one shell line with <code>--json</code>, <code>--jq</code> or <code>gh api</code>. It never stopped to read help. An agent-specific tool starts at a disadvantage on unfamiliar ground: the agent does not know its commands, so it reads help, and each help read is often a round trip of its own. That is much of the extra cost we saw for <code>gh-axi</code>, which agents stopped to learn in 29 to 72 of 84 runs.</p>
+
+<p>The same mechanism explains where <code>gh-tai</code> lost ground despite speaking <code>gh</code>'s language. A helpful-looking suggestion in an error message invited one more step. A refusal where <code>gh</code> would have answered (the 1,000-result search cap) forced a detour. Extra lines in the output broke a pipe and needed a retry. Each cost a round trip, and a round trip is worth more than anything a few saved characters can buy back. Kun Chen's study observed the same mechanism for MCP tool search: "Each extra turn re-sends the entire growing context, so the savings from a smaller initial context are consumed by the accumulation across additional turns" [2].</p>
+
+<p>Outside studies agree. An analysis of 600 public coding-agent runs found that the number of turns explained 84% of the variation in the log of run cost, against 4% for mean output size [8]. A controlled study of token-reduction add-ons for Claude Code found that the strongest one cut tool-output tokens by 38.4% and raised the billed cost by 6.8%, because the agent took extra steps to recover what was cut [9]. Production traces from GitHub Copilot show a nearly one-to-one coupling between model calls and tool executions [10], so each tool call is about one round trip in real use as well. A comparison of the <code>gh</code> CLI and GitHub's MCP server across seven agent programs found failures equally common on both, but 12.9% of MCP spending bought no finished work against 2.2% for the CLI [11]. And a study of enterprise agent tasks found a plain shell beat purpose-built typed tools while using 19% to 72% fewer tokens [12]. The broader point is older: the SWE-agent work showed that the design of the interface an agent uses changes how well the agent works [13].</p>
+
+<p>For a tool to beat plain <code>gh</code>, then, it has to save round trips on questions where plain <code>gh</code> needs several. Shorter output is not enough, and a familiar command grammar only brings a tool level with <code>gh</code>. On our sealed sets we found no kind of question where any tool reliably saved steps over plain <code>gh</code>.</p>
+
+<h2>6. Threats to validity</h2>
+
+<p>We built <code>gh-tai</code>, so we have an interest in the outcome. We reduced the risk with sealed questions written by a session that had not seen the tool, script grading, a keep rule fixed in advance, and by reporting the result against our own tool. The question sets were nonetheless written by agent sessions in our own setup, and their mix of question kinds is one writer's guess at what developers ask.</p>
+
+<p>Every question was a read on a public repository. We measured no writes, no private repositories and no long investigations of the kind where an agent works through many objects over many steps. The results say nothing about savings on writes.</p>
+
+<p>We used one agent program, Claude Code, and one model family, Claude. Other agent programs and other models may favour different tools. The re-run of AXI's benchmark used an older model, Sonnet 4.6, and AXI's language-model judge rather than script grading, and its budget allowed only one or two runs per task, so its per-task results are noisy.</p>
+
+<p>The MCP arm used GitHub's default tool sets, loaded through ToolSearch, as a developer would get them out of the box. A configuration with more tool sets, such as the one for GitHub Actions, would answer questions this one could not. Loading all tools up front would change its cost. MCP is not always worse; this configuration was worse on these questions. Agents in the MCP arm were also the only ones to hit GitHub's rate limit on the second set (8 runs), and shared that with <code>gh-axi</code> on the first (3 runs each), which may have added steps.</p>
+
+<p><code>gh-axi</code> was used as shipped, and the instruction text said nothing about reading help. A prompt that taught the agent <code>gh-axi</code>'s commands in advance might lower its cost, but would also add tokens to every request, and no arm received such help.</p>
+
+<p>The instruction text for <code>gh-tai</code> is 20 characters longer than for <code>gh</code> (the name is 4 characters longer and appears 5 times), re-read on every step, about 5 to 10 tokens per step. When every difference counts, with no 2% band, plain <code>gh</code> comes out cheaper on every model (p between less than 0.0001 and 0.008), and this small difference in instruction length explains much of that. The 2% band, fixed before these runs, absorbs differences of that size.</p>
+
+<p>With 42 questions and two repeats, the sign test can miss a small real difference of a few percent. Our tie result means we could not detect a difference, not that the tools are identical.</p>
+
+<p>Live data can change during a run. Reading the truth twice handled this. On the first set GitHub's rate limit emptied both truth readings for one run, which was then graded wrong by mistake; we re-graded it from its saved answer with the same grader, and it was correct. On the second set GitHub returned a server error to one truth reading before a run; that run was graded against the reading taken at grading time and was correct. No other grading faults occurred.</p>
+
+<p>Our token measure counts cached input in full, so it overstates what a cache-discounted bill would show; one study estimates flat input pricing overstates loop cost by about seven times under near-ideal caching [8]. We compare arms with each other, not with a bill, and every arm is measured the same way. Our earlier 465-run fit (Section 5) comes from a previous run of ours on a similar benchmark with an older agent version; we cite it for its per-character estimate, and our own data in Figure 2 give the per-round-trip figure.</p>
+
+<h2>7. Conclusion</h2>
+
+<p>We asked whether GitHub tools built for AI agents are cheaper for agents than the tool built for people. On two sealed, script-graded sets of 42 read-only questions, across four Claude models, they were not. <code>gh-axi</code> cost 1.5 to 2.5 times plain <code>gh</code>'s input tokens and GitHub's MCP server 2.1 to 2.5 times, with no gain in correct answers. Our own drop-in replacement matched plain <code>gh</code> on correct answers, matched it on tokens on three models, and cost a little more on the fourth. It did not meet the rule we set for keeping it. A re-run of AXI's own benchmark found plain <code>gh</code> cheaper than <code>gh-axi</code> there too.</p>
+
+<p>The reason is round trips. Each step re-sends the whole conversation, so the number of steps sets the cost, and plain <code>gh</code> already takes the fewest steps on most everyday questions because models know it well. A tool that wants to beat it has to remove steps on multi-step questions, and has to do so without adding help reads or detours that each cost a step of their own.</p>
+
+<p>For developers the practical advice is simple. If your agent reads GitHub, plain <code>gh</code> is a strong default. If you build a tool for agents, measure it against the plain tool first, on questions you have never seen, graded by a script, and count total input tokens and round trips. The plain tool is the rival that is hard to beat.</p>
+
+<p>We have not yet tested writes, long multi-step investigations, other agent programs or other model families. Those are where a purpose-built tool might still earn its place.</p>
+
+<h3>Availability and acknowledgement</h3>
+
+<p><code>gh-tai</code> is unreleased. The two question sets remain sealed. For every run we kept the full agent transcript, every tool call and the grade. We thank Kun Chen for publishing the AXI benchmark with its tasks, conditions, grader and every trajectory, which made an exact re-run possible.</p>
+
+<h2>References</h2>
+<ol class="refs">
+<li>K. Chen. "AXI: Agent eXperience Interface." Project site, 2026. <a href="https://axi.md/">https://axi.md/</a> (read 26 November 2026).</li>
+<li>K. Chen. "AXI Benchmark Study: Agent Interface Comparison (GitHub)." Study dated 21 March 2026, in the AXI repository, MIT licence. <a href="https://github.com/kunchenguid/axi/blob/main/bench-github/published-results/STUDY.md">https://github.com/kunchenguid/axi/blob/main/bench-github/published-results/STUDY.md</a></li>
+<li>K. Chen. gh-axi, the reference GitHub tool for AXI. <a href="https://github.com/kunchenguid/gh-axi">https://github.com/kunchenguid/gh-axi</a> (version 0.1.43 used).</li>
+<li>"Three grading hints pin point-in-time facts." Issue 117 in the AXI repository, re-run dated 26 July 2026. <a href="https://github.com/kunchenguid/axi/issues/117">https://github.com/kunchenguid/axi/issues/117</a></li>
+<li>GitHub CLI (gh). <a href="https://cli.github.com/">https://cli.github.com/</a> (version 2.86.0 used).</li>
+<li>GitHub MCP server. <a href="https://github.com/github/github-mcp-server">https://github.com/github/github-mcp-server</a> (remote endpoint <code>https://api.githubcopilot.com/mcp/</code>, default tool sets, 49 tools at the time of our runs).</li>
+<li>Model Context Protocol specification. <a href="https://modelcontextprotocol.io/">https://modelcontextprotocol.io/</a></li>
+<li>"TurnCost: Turns, Not Observations: Cache-Aware Loop Engineering for Coding Agents." arXiv:2610.15093, October 2026. <a href="https://arxiv.org/abs/2610.15093">https://arxiv.org/abs/2610.15093</a></li>
+<li>"Token Reduction Is Not Cost Reduction." arXiv:2607.12161, July 2026. <a href="https://arxiv.org/abs/2607.12161">https://arxiv.org/abs/2607.12161</a></li>
+<li>"Agentic Coding in the Wild: Characterizing GitHub Copilot Traces at Production Scale." arXiv:2608.00101, July 2026. <a href="https://arxiv.org/abs/2608.00101">https://arxiv.org/abs/2608.00101</a></li>
+<li>"The Scaffolding Matters More Than the Interface: A Controlled Comparison of MCP and CLI Tool Use Across Seven Agent Scaffoldings, Five Language Models, and One Software Task." arXiv:2608.08654, August 2026. <a href="https://arxiv.org/abs/2608.08654">https://arxiv.org/abs/2608.08654</a></li>
+<li>"Is Bash All You Need? An Empirical Study of Tool Interfaces for Enterprise Digital Worker Agents." arXiv:2609.11999, September 2026. <a href="https://arxiv.org/abs/2609.11999">https://arxiv.org/abs/2609.11999</a></li>
+<li>"SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering." arXiv:2405.15793, May 2024. <a href="https://arxiv.org/abs/2405.15793">https://arxiv.org/abs/2405.15793</a></li>
+<li>"Probable inference, the law of succession, and statistical inference." Journal of the American Statistical Association 22 (1927): 209-212. The source of the Wilson score interval.</li>
+<li>"The statistical sign test." Journal of the American Statistical Association 41 (1946): 557-566.</li>
+</ol>

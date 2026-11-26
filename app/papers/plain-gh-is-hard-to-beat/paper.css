@@ -1,0 +1,79 @@
+/* Styles for /papers/plain-gh-is-hard-to-beat only. Everything is scoped under .ghp
+   so nothing leaks into the rest of the site. Colors follow the site palette
+   (cream, charcoal, warm gray, sage); the four series colors are the figures' data
+   colors. Light only, like the rest of the site. */
+
+.ghp {
+  --bg: #faf9f6;
+  --fg: #1a1a1a;
+  --muted: #6b6b6b;
+  --rule: #e2ddd3;
+  --box: #f5f1eb;
+  --box-rule: #d8d1c4;
+  --link: #5f7a6e;
+  --code-bg: #efebe3;
+  --c-gh: #2f6db5;
+  --c-axi: #c8641c;
+  --c-mcp: #7e4fb8;
+  --c-tai: #1f8a7a;
+  --grid: #e6e1d8;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.ghp main { max-width: 48rem; margin: 0 auto; padding: 4rem 1.5rem; font-size: 17px; line-height: 1.65; }
+.ghp header.paper { border-bottom: 1px solid var(--rule); padding-bottom: 20px; margin-bottom: 28px; }
+.ghp .readtime { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--link); font-weight: 500; margin: 0 0 16px; }
+.ghp h1 { font-size: 1.875rem; line-height: 1.25; margin: 0 0 14px; font-weight: 600; }
+.ghp .byline { margin: 0; font-size: 14px; color: var(--muted); }
+.ghp .date { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.ghp .status { margin: 10px 0 0; color: var(--muted); font-size: 14px; font-style: italic; }
+.ghp h2 { font-size: 1.25rem; margin: 48px 0 10px; font-weight: 600; }
+.ghp h3 { font-size: 1rem; margin: 30px 0 8px; font-weight: 600; }
+.ghp p { margin: 0 0 14px; }
+.ghp .abstract { margin: 0 0 24px; }
+.ghp .abstract h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 8px; color: var(--link); }
+.ghp .findings { background: var(--box); border: 1px solid var(--box-rule); border-left: 3px solid var(--link); border-radius: 4px; padding: 16px 20px 6px; margin: 0 0 28px; }
+.ghp .findings h2 { font-size: 1rem; margin: 0 0 10px; }
+.ghp .findings ol { list-style: decimal; margin: 0 0 10px; padding-left: 22px; }
+.ghp .findings li { margin-bottom: 8px; }
+.ghp code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.86em; background: var(--code-bg); padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
+.ghp ol.refs code { white-space: normal; overflow-wrap: anywhere; }
+.ghp pre { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.45; background: var(--code-bg); padding: 12px 14px; border-radius: 4px; overflow-x: auto; margin: 0 0 16px; white-space: pre; }
+.ghp pre code { background: none; padding: 0; font-size: inherit; white-space: pre; }
+.ghp a { color: var(--link); text-decoration: underline; }
+.ghp a:hover { text-decoration: none; }
+.ghp strong, .ghp b { font-weight: 700; }
+.ghp .table-wrap { overflow-x: auto; margin: 6px 0; -webkit-overflow-scrolling: touch; }
+.ghp table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.ghp .tcap { font-size: 15px; line-height: 1.5; margin: 22px 0 6px; }
+.ghp .tcap b { font-weight: 600; }
+.ghp th, .ghp td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.ghp th:first-child, .ghp td:first-child { text-align: left; }
+.ghp thead th { border-bottom: 1.5px solid var(--fg); font-weight: 600; vertical-align: bottom; }
+.ghp tbody tr:last-child td { border-bottom: 1.5px solid var(--fg); }
+.ghp td.l, .ghp th.l { text-align: left; }
+.ghp .note { font-size: 14px; color: var(--muted); margin: 6px 0 20px; line-height: 1.5; }
+.ghp figure { margin: 24px 0; }
+.ghp figure svg { width: 100%; height: auto; display: block; }
+.ghp figcaption { font-size: 15px; line-height: 1.5; margin-top: 8px; }
+.ghp figcaption b { font-weight: 600; }
+.ghp .svg-text { fill: var(--fg); }
+.ghp .svg-muted { fill: var(--muted); }
+.ghp .svg-grid { stroke: var(--grid); stroke-width: 1; }
+.ghp .svg-axis { stroke: var(--muted); stroke-width: 1; }
+.ghp .f-gh { fill: var(--c-gh); } .ghp .f-axi { fill: var(--c-axi); } .ghp .f-mcp { fill: var(--c-mcp); } .ghp .f-tai { fill: var(--c-tai); }
+.ghp .s-gh { stroke: var(--c-gh); } .ghp .s-axi { stroke: var(--c-axi); } .ghp .s-mcp { stroke: var(--c-mcp); } .ghp .s-tai { stroke: var(--c-tai); }
+.ghp .fitline { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+.ghp ol.refs { list-style: decimal; padding-left: 26px; font-size: 15px; }
+.ghp ol.refs li { margin-bottom: 8px; overflow-wrap: anywhere; }
+.ghp .eq { text-align: center; margin: 4px 0 16px; font-style: italic; }
+@media (max-width: 520px) {
+  .ghp main { padding: 3rem 1rem; font-size: 16px; }
+  .ghp h1 { font-size: 1.5rem; }
+  .ghp h2 { font-size: 1.15rem; }
+  .ghp table { font-size: 13px; }
+  .ghp th, .ghp td { padding: 5px 6px; }
+  .ghp td { white-space: normal; min-width: 4.5em; }
+}
