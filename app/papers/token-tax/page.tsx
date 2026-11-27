@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import { CiteThis, PaperLinks } from "@/components/PaperCitation";
+import { PAPERS, citationMeta } from "@/lib/papers";
+
+const PAPER = PAPERS["token-tax"];
 
 export const metadata: Metadata = {
   title: "The Token Tax: measuring the ceiling on read-gating | Multimode AI",
@@ -11,6 +15,7 @@ export const metadata: Metadata = {
     url: "https://multimodeai.com/papers/token-tax",
     type: "article",
   },
+  other: citationMeta(PAPER),
 };
 
 const P = ({ children }: { children: React.ReactNode }) => (
@@ -47,6 +52,7 @@ export default function Page() {
       <p className="mt-3 text-sm opacity-70">
         Hud Wahab · Multimode AI · 15 September 2026
       </p>
+      <PaperLinks paper={PAPER} />
 
       <H2>Abstract</H2>
       <P>
@@ -534,6 +540,7 @@ chmod +x hooks/size-gate.sh bin/token-tax
         </a>
         .
       </P>
+      <CiteThis paper={PAPER} />
     </main>
   );
 }
