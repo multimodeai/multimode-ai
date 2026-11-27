@@ -44,7 +44,8 @@ const body = fs.readFileSync(
 // The PDF link goes right after the paper's header (title, byline, date); the
 // article HTML itself is left unchanged.
 const HEADER_END = "</header>";
-const headerEnd = body.indexOf(HEADER_END) + HEADER_END.length;
+const headerIndex = body.indexOf(HEADER_END);
+const headerEnd = headerIndex === -1 ? 0 : headerIndex + HEADER_END.length;
 const header = body.slice(0, headerEnd);
 const article = body.slice(headerEnd);
 
