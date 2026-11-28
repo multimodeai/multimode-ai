@@ -1,0 +1,28 @@
+/* Styles for the paper pages only (loaded by PaperCitation). */
+
+/* The "Cite this" box. The BibTeX wraps so the whole entry shows on a phone;
+   copying it still gives the original lines. The .ghp rules undo the
+   plain-gh paper's own heading, paragraph and code-block spacing inside it. */
+.cite-box pre, .cite-box pre code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ghp .cite-box h2 { margin: 0; font-size: 1rem; }
+.ghp .cite-box h3 { margin: 16px 0 0; font-size: 0.875rem; }
+.ghp .cite-box p { margin: 12px 0 0; font-size: 14px; }
+.ghp .cite-box pre { margin: 8px 0 0; font-size: 12px; }
+.ghp .cite-box pre code { white-space: pre-wrap; }
+.ghp .paper-links { margin: 0 0 20px; font-size: 14px; }
+
+/* Print rules: they shape the PDF copy of each paper. Plain white pages, no
+   table, figure, code block or box split across a page break, and long code
+   lines wrapped. The PDF link and the "Cite this" box are not printed. */
+@media print {
+  @page { size: letter; margin: 18mm 16mm; }
+  html, body, .ghp { background: #fff !important; }
+  .ghp { min-height: 0; }
+  main, .ghp main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  h1, h2, h3, .tcap { break-after: avoid; }
+  figure, table, pre, tr, .table-wrap, .findings, .abstract { break-inside: avoid; }
+  .overflow-x-auto, .table-wrap, pre { overflow: visible !important; }
+  /* Long code lines wrap instead of being cut off at the page edge. */
+  pre, pre code, .ghp pre, .ghp pre code { white-space: pre-wrap !important; overflow-wrap: anywhere; }
+  p, li { orphans: 3; widows: 3; }
+}

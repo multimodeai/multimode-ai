@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import fs from "fs";
 import path from "path";
 import "./paper.css";
+import { CiteThis, PaperLinks } from "@/components/PaperCitation";
+import { PAPERS, citationMeta } from "@/lib/papers";
+
+const PAPER = PAPERS["plain-gh-is-hard-to-beat"];
 
 const TITLE =
   "Plain gh Is Hard to Beat: What It Costs an AI Agent to Read GitHub Through gh, gh-axi, GitHub's MCP Server and a Drop-in Replacement";
@@ -24,6 +28,7 @@ export const metadata: Metadata = {
     description:
       "The two agent-specific tools cost more than plain gh. Across tools, cost followed the number of round trips between the agent and the tool far more than the size of each output.",
   },
+  other: citationMeta(PAPER),
 };
 
 // Rendered once at build time. The body is the approved article's HTML, copied
@@ -36,10 +41,23 @@ const body = fs.readFileSync(
   "utf8",
 );
 
+// The PDF link goes right after the paper's header (title, byline, date); the
+// article HTML itself is left unchanged.
+const HEADER_END = "</header>";
+const headerIndex = body.indexOf(HEADER_END);
+const headerEnd = headerIndex === -1 ? 0 : headerIndex + HEADER_END.length;
+const header = body.slice(0, headerEnd);
+const article = body.slice(headerEnd);
+
 export default function Page() {
   return (
     <div className="ghp">
-      <main dangerouslySetInnerHTML={{ __html: body }} />
+      <main>
+        <div dangerouslySetInnerHTML={{ __html: header }} />
+        <PaperLinks paper={PAPER} />
+        <div dangerouslySetInnerHTML={{ __html: article }} />
+        <CiteThis paper={PAPER} />
+      </main>
     </div>
   );
 }

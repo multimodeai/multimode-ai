@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import { CiteThis, PaperLinks } from "@/components/PaperCitation";
+import { PAPERS, citationMeta } from "@/lib/papers";
+
+const PAPER = PAPERS["what-ai-models-read"];
 
 export const metadata: Metadata = {
   title: "What AI models actually read on your page | Multimode AI",
@@ -11,6 +15,7 @@ export const metadata: Metadata = {
     url: "https://multimodeai.com/papers/what-ai-models-read",
     type: "article",
   },
+  other: citationMeta(PAPER),
 };
 
 const P = ({ children }: { children: React.ReactNode }) => (
@@ -35,6 +40,7 @@ export default function Page() {
       <p className="mt-3 text-sm opacity-70">
         Hud Wahab · Multimode AI · 28 August 2026
       </p>
+      <PaperLinks paper={PAPER} />
 
       <H2>Abstract</H2>
       <P>
@@ -228,6 +234,7 @@ export default function Page() {
         Reliable? Misleading Knowledge Induces False Conclusions.{" "}
         <a className="underline" href="https://arxiv.org/abs/2607.20891">arXiv:2607.20891</a>.
       </P>
+      <CiteThis paper={PAPER} />
     </main>
   );
 }
